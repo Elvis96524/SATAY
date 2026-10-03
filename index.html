@@ -58,9 +58,6 @@
       </div>
       <span id="userChip" class="text-amber-100 hidden sm:inline"></span>
       <button id="btnExport" class="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="export">Export CSV</button>
-      <button id="btnBackup" class="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="backup">Backup (JSON)</button>
-      <button id="btnImport" class="admin-only px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="import">Restore (JSON)</button>
-      <input type="file" id="fImport" accept=".json,application/json" style="display:none">
       <button id="btnReset" class="admin-only px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="clear">Clear all data</button>
       <button id="btnLogout" class="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="logout">Sign out</button>
     </div>
@@ -158,6 +155,10 @@
 <div id="modal" style="display:none" class="fixed inset-0 z-50 items-center justify-center bg-black/40 p-4">
   <div class="bg-white rounded-2xl shadow-xl p-5 w-full max-w-sm" role="dialog" aria-modal="true">
     <p id="modalMsg" class="text-sm text-stone-700"></p>
+    <div id="modalPassWrap" style="display:none" class="mt-3">
+      <input id="modalPass" type="password" autocomplete="current-password" data-i18n-ph="admin_pw_ph" placeholder="Admin password" class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
+      <p id="modalErr" style="display:none" class="text-rose-600 text-xs mt-1"></p>
+    </div>
     <div class="mt-5 flex justify-end gap-2 text-sm">
       <button type="button" id="modalNo" class="px-4 py-2 rounded-lg bg-stone-100 hover:bg-stone-200" data-i18n="cancel">Cancel</button>
       <button type="button" id="modalYes" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-medium"></button>
@@ -198,15 +199,12 @@
       footer: (n, v) => `${n} record${n === 1 ? '' : 's'} shown · combined value ${v}`,
       toast_status: 'Status updated', toast_added: 'Transaction added',
       toast_deleted: 'Transaction deleted', toast_cleared: 'All data cleared',
-      cancel: 'Cancel',
+      cancel: 'Cancel', admin_pw_ph: 'Enter admin password to confirm', admin_pw_wrong: 'Incorrect admin password.',
       username: 'Username', password: 'Password', sign_in: 'Sign in', logout: 'Sign out',
       login_err: 'Wrong username or password.',
       login_load_err: 'Cannot load users.json. Open this app from a web server (http/https), not directly from the file.',
       no_crypto: 'Sign-in needs a secure page (https or localhost).',
       role_admin: 'Admin', role_staff: 'Staff',
-      backup: 'Backup (JSON)', import: 'Restore (JSON)', restore: 'Replace',
-      confirm_import: n => `Replace all current data with ${n} transaction${n === 1 ? '' : 's'} from this file?`,
-      import_bad: 'This file is not a valid data.json backup.', toast_imported: 'Data restored',
       confirm_del: 'Delete this transaction?', confirm_clear: 'Delete ALL transactions? This cannot be undone.',
       del: 'Delete', u_kg: 'kg', u_sticks: 'sticks',
       csv_head: ['Date', 'Vendor', 'DO No.', 'Item', 'Type', 'Quantity', 'Unit Price', 'Total', 'Status'],
@@ -242,15 +240,12 @@
       footer: (n, v) => `${n} rekod dipaparkan · jumlah nilai ${v}`,
       toast_status: 'Status dikemas kini', toast_added: 'Transaksi ditambah',
       toast_deleted: 'Transaksi dipadam', toast_cleared: 'Semua data dipadam',
-      cancel: 'Batal',
+      cancel: 'Batal', admin_pw_ph: 'Masukkan kata laluan admin untuk mengesahkan', admin_pw_wrong: 'Kata laluan admin salah.',
       username: 'Nama pengguna', password: 'Kata laluan', sign_in: 'Log masuk', logout: 'Log keluar',
       login_err: 'Nama pengguna atau kata laluan salah.',
       login_load_err: 'Tidak dapat memuatkan users.json. Buka aplikasi ini melalui pelayan web (http/https), bukan terus dari fail.',
       no_crypto: 'Log masuk memerlukan halaman selamat (https atau localhost).',
       role_admin: 'Admin', role_staff: 'Kakitangan',
-      backup: 'Sandaran (JSON)', import: 'Pulihkan (JSON)', restore: 'Ganti',
-      confirm_import: n => `Gantikan semua data semasa dengan ${n} transaksi daripada fail ini?`,
-      import_bad: 'Fail ini bukan sandaran data.json yang sah.', toast_imported: 'Data dipulihkan',
       confirm_del: 'Padam transaksi ini?', confirm_clear: 'Padam SEMUA transaksi? Tindakan ini tidak boleh dibatalkan.',
       del: 'Padam', u_kg: 'kg', u_sticks: 'batang',
       csv_head: ['Tarikh', 'Vendor', 'No. DO', 'Item', 'Jenis', 'Kuantiti', 'Harga Seunit', 'Jumlah', 'Status'],
@@ -462,13 +457,39 @@
   }
 
   // ---------- In-page confirm dialog (native confirm() is blocked in some embedded views) ----------
-  let pendingConfirm = null;
-  function closeConfirm() { $('#modal').style.display = 'none'; pendingConfirm = null; }
-  function askConfirm(msg, okLabel, onOk) {
-    $('#modalMsg').textContent = msg; $('#modalYes').textContent = okLabel;
-    pendingConfirm = onOk; $('#modal').style.display = 'flex'; $('#modalNo').focus();
+  let pendingConfirm = null, pendingNeedsPass = false;
+  function closeConfirm() {
+    $('#modal').style.display = 'none'; $('#modalPassWrap').style.display = 'none';
+    $('#modalPass').value = ''; $('#modalErr').style.display = 'none';
+    pendingConfirm = null; pendingNeedsPass = false;
   }
-  $('#modalYes').addEventListener('click', () => { const cb = pendingConfirm; closeConfirm(); if (cb) cb(); });
+  function askConfirm(msg, okLabel, onOk, needsAdminPassword) {
+    $('#modalMsg').textContent = msg; $('#modalYes').textContent = okLabel;
+    pendingConfirm = onOk; pendingNeedsPass = !!needsAdminPassword;
+    $('#modalPass').value = ''; $('#modalErr').style.display = 'none';
+    $('#modalPassWrap').style.display = pendingNeedsPass ? 'block' : 'none';
+    $('#modal').style.display = 'flex';
+    (pendingNeedsPass ? $('#modalPass') : $('#modalNo')).focus();
+  }
+  async function verifyAdminPassword(pw) {
+    if (!session || session.role !== 'admin' || !pw) return false;
+    if (!(window.crypto && crypto.subtle)) throw new Error('nocrypto');
+    const users = await loadUsers();
+    const u = users.find(x => String(x.username).toLowerCase() === session.username.toLowerCase() && x.role === 'admin' && x.active !== false);
+    return !!u && u.passwordHash === await sha256(session.username.toLowerCase() + ':' + pw);
+  }
+  $('#modalYes').addEventListener('click', async () => {
+    if (!pendingConfirm) return;
+    if (pendingNeedsPass) {
+      const err = $('#modalErr'); err.style.display = 'none';
+      let ok = false;
+      try { ok = await verifyAdminPassword($('#modalPass').value); }
+      catch (e) { err.textContent = t(e.message === 'nocrypto' ? 'no_crypto' : 'login_load_err'); err.style.display = 'block'; return; }
+      if (!ok) { err.textContent = t('admin_pw_wrong'); err.style.display = 'block'; $('#modalPass').select(); return; }
+    }
+    const cb = pendingConfirm; closeConfirm(); if (cb) cb();
+  });
+  $('#modalPass').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#modalYes').click(); } });
   $('#modalNo').addEventListener('click', closeConfirm);
   $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeConfirm(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeConfirm(); });
@@ -524,7 +545,8 @@
   });
 
   $('#btnReset').addEventListener('click', () => {
-    askConfirm(t('confirm_clear'), t('clear'), () => { state = blank(); save(); renderAll(); toast(t('toast_cleared')); });
+    if (!session || session.role !== 'admin') return;
+    askConfirm(t('confirm_clear'), t('clear'), () => { state = blank(); save(); renderAll(); toast(t('toast_cleared')); }, true);
   });
 
   $('#btnExport').addEventListener('click', () => {
@@ -616,24 +638,6 @@
     }
     return out;
   }
-  $('#btnBackup').addEventListener('click', () => {
-    const data = { app: 'satay-dashboard', version: 1, exportedAt: new Date().toISOString(), transactions: state.tx };
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
-    a.download = 'data.json'; a.click(); URL.revokeObjectURL(a.href);
-  });
-  $('#btnImport').addEventListener('click', () => { $('#fImport').value = ''; $('#fImport').click(); });
-  $('#fImport').addEventListener('change', e => {
-    const f = e.target.files && e.target.files[0]; if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      let tx = null;
-      try { const j = JSON.parse(reader.result); tx = cleanTx(Array.isArray(j) ? j : j.transactions); } catch (err) {}
-      if (!tx) return toast(t('import_bad'));
-      askConfirm(t('confirm_import')(tx.length), t('restore'), () => { state = { tx }; save(); renderAll(); toast(t('toast_imported')); });
-    };
-    reader.readAsText(f);
-  });
   // First run only: start from data.json (if it has transactions) when nothing is saved yet
   async function seedFromDataJson() {
     if (hadStored) return;
@@ -643,6 +647,16 @@
       if (tx && tx.length && !hadStored) { state = { tx }; save(); renderAll(); }
     } catch (e) {}
   }
+
+  // Keep the page in sync with what is saved: refresh when another tab changes data or when you come back to the app
+  function reloadSaved() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) { state = JSON.parse(raw); renderAll(); }
+    } catch (e) {}
+  }
+  window.addEventListener('storage', e => { if (e.key === KEY) reloadSaved(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) reloadSaved(); });
 
   function registerSW() {
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
