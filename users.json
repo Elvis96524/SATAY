@@ -1,0 +1,19 @@
+{
+  "_readme": "passwordHash = SHA-256 hex of \"<username in lowercase>:<password>\". Replace the sample hashes below. role: admin (can delete, clear and restore data) or staff (can add and update). Set active:false to block a user. This file is public to anyone who can open the site, so it is a convenience gate, not real security.",
+  "users": [
+    {
+      "username": "admin",
+      "name": "Administrator",
+      "role": "admin",
+      "active": true,
+      "passwordHash": "bf6b5bdb74c79ece9fc0ad0ac9fb0359f9555d4f35a83b2e6ec69ae99e09603d"
+    },
+    {
+      "username": "staff",
+      "name": "Staff",
+      "role": "staff",
+      "active": true,
+      "passwordHash": "d15127858f71b6c259d34c4779c097f17f59c81ff986f67cc88aa6bb3ad72a0f"
+    }
+  ]
+}

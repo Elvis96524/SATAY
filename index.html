@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Satay Supply Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .tab-active { background:#fff; color:#b45309; box-shadow:0 1px 2px rgba(0,0,0,.08); }
+  .toast { transition: opacity .3s, transform .3s; }
+  body[data-role="staff"] .admin-only { display:none !important; }
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#b45309">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Satay">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body class="bg-stone-100 text-stone-800 min-h-screen">
+
+<!-- LOGIN (users.json) -->
+<div id="login" style="display:flex" class="fixed inset-0 z-40 items-center justify-center bg-gradient-to-br from-amber-700 to-orange-600 p-4">
+  <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <img src="icon-192.png" alt="" class="w-12 h-12 rounded-xl mb-3">
+        <h1 class="text-xl font-bold" data-i18n="title">Satay Supply Dashboard</h1>
+      </div>
+      <div class="inline-flex bg-stone-100 rounded-lg p-0.5" id="loginLang" role="group" aria-label="Language">
+        <button type="button" data-lang="en" class="px-3 py-1 rounded-md">EN</button>
+        <button type="button" data-lang="ms" class="px-3 py-1 rounded-md">BM</button>
+      </div>
+    </div>
+    <form id="loginForm" class="mt-5 space-y-3 text-sm" autocomplete="on">
+      <label class="block"><span class="text-stone-500" data-i18n="username">Username</span>
+        <input id="lUser" autocomplete="username" autocapitalize="none" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></label>
+      <label class="block"><span class="text-stone-500" data-i18n="password">Password</span>
+        <input id="lPass" type="password" autocomplete="current-password" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></label>
+      <p id="loginErr" style="display:none" class="text-rose-600 text-xs"></p>
+      <button id="loginBtn" class="w-full px-4 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium" data-i18n="sign_in">Sign in</button>
+    </form>
+  </div>
+</div>
+
+<header class="bg-gradient-to-r from-amber-700 to-orange-600 text-white">
+  <div class="max-w-6xl mx-auto px-4 py-5 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight" data-i18n="title">Satay Supply Dashboard</h1>
+      <p class="text-amber-100 text-sm" data-i18n="subtitle">Vendor transactions &amp; payment reconciliation</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 text-sm">
+      <div class="inline-flex bg-white/15 rounded-lg p-0.5" id="langSwitch" role="group" aria-label="Language">
+        <button data-lang="en" class="px-3 py-1 rounded-md font-medium">EN</button>
+        <button data-lang="ms" class="px-3 py-1 rounded-md font-medium">BM</button>
+      </div>
+      <span id="userChip" class="text-amber-100 hidden sm:inline"></span>
+      <button id="btnExport" class="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="export">Export CSV</button>
+      <button id="btnBackup" class="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="backup">Backup (JSON)</button>
+      <button id="btnImport" class="admin-only px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="import">Restore (JSON)</button>
+      <input type="file" id="fImport" accept=".json,application/json" style="display:none">
+      <button id="btnReset" class="admin-only px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="clear">Clear all data</button>
+      <button id="btnLogout" class="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="logout">Sign out</button>
+    </div>
+  </div>
+</header>
+<div id="storeWarn" class="hidden bg-rose-50 text-rose-700 text-sm px-4 py-2 text-center" data-i18n="store_warn"></div>
+
+<main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+
+  <section class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="metrics"></section>
+
+  <nav class="inline-flex bg-stone-200 rounded-xl p-1 text-sm font-medium" id="tabs">
+    <button data-tab="overview" class="tab px-4 py-2 rounded-lg" data-i18n="tab_overview">Overview</button>
+    <button data-tab="transactions" class="tab px-4 py-2 rounded-lg" data-i18n="tab_tx">Transactions</button>
+    <button data-tab="payments" class="tab px-4 py-2 rounded-lg" data-i18n="tab_pay">Payments</button>
+  </nav>
+
+  <!-- OVERVIEW -->
+  <section id="tab-overview" class="space-y-6">
+    <div class="bg-white rounded-2xl shadow-sm p-5">
+      <h2 class="font-semibold mb-3" data-i18n="outstanding">Outstanding by vendor</h2>
+      <div id="ovVendors" class="space-y-2 text-sm"></div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm p-5">
+      <h2 class="font-semibold mb-3" data-i18n="latest">Latest transactions</h2>
+      <div class="overflow-x-auto"><table class="w-full text-sm" id="ovRecent"></table></div>
+    </div>
+  </section>
+
+  <!-- TRANSACTIONS -->
+  <section id="tab-transactions" class="hidden space-y-6">
+    <div class="bg-white rounded-2xl shadow-sm p-5">
+      <h2 class="font-semibold mb-4" data-i18n="record">Record a transaction</h2>
+      <form id="txForm" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+        <label class="block"><span class="text-stone-500" data-i18n="date">Date</span>
+          <input type="date" id="fDate" required class="mt-1 w-full rounded-lg border-stone-300 border px-3 py-2"></label>
+        <label class="block"><span class="text-stone-500" data-i18n="type">Type</span>
+          <select id="fType" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2">
+            <option value="purchase" data-i18n="type_purchase">Purchase Raw Material</option>
+            <option value="resell" data-i18n="type_resell">Re-sell Satay</option>
+          </select></label>
+        <label class="block"><span class="text-stone-500" id="fVendorLabel">Supplier name</span>
+          <input type="text" id="fVendor" required list="vendorList" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2">
+          <datalist id="vendorList"></datalist></label>
+        <label class="block hidden" id="fDoWrap"><span class="text-stone-500" data-i18n="do_no">DO number</span>
+          <input type="text" id="fDo" autocomplete="off" data-i18n-ph="do_ph" placeholder="e.g. DO-0001" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></label>
+        <label class="block"><span class="text-stone-500" data-i18n="item">Item</span>
+          <select id="fItem" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></select></label>
+        <label class="block"><span class="text-stone-500"><span data-i18n="quantity">Quantity</span> <span id="fUnit" class="text-stone-400"></span></span>
+          <input type="number" id="fQty" min="0.01" step="any" required class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></label>
+        <label class="block"><span class="text-stone-500" data-i18n="unit_price">Unit price (RM)</span>
+          <input type="number" id="fPrice" min="0" step="any" required class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></label>
+        <label class="block"><span class="text-stone-500" data-i18n="total_rm">Total (RM)</span>
+          <input type="text" id="fTotal" readonly value="0.00" class="mt-1 w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 font-semibold"></label>
+        <label class="block"><span class="text-stone-500" data-i18n="pay_status">Payment status</span>
+          <select id="fPaid" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2">
+            <option value="pending" data-i18n="opt_pending">Pending</option>
+            <option value="paid" data-i18n="opt_settled">Already settled</option>
+          </select></label>
+        <div class="sm:col-span-2 lg:col-span-4 flex justify-end">
+          <button class="px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium" data-i18n="add">Add transaction</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <h2 class="font-semibold" data-i18n="all_tx">All transactions</h2>
+        <input id="txSearch" type="search" data-i18n-ph="search_ph" placeholder="Search vendor or item…" class="rounded-lg border border-stone-300 px-3 py-1.5 text-sm w-60">
+      </div>
+      <div class="overflow-x-auto"><table class="w-full text-sm" id="txTable"></table></div>
+    </div>
+  </section>
+
+  <!-- PAYMENTS -->
+  <section id="tab-payments" class="hidden space-y-4">
+    <div class="bg-white rounded-2xl shadow-sm p-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 class="font-semibold" data-i18n="ledger">Payment &amp; reconciliation ledger</h2>
+        <div class="flex flex-wrap gap-3 text-sm">
+          <div class="inline-flex bg-stone-100 rounded-lg p-1" id="statusFilter">
+            <button data-v="all" class="px-3 py-1 rounded-md" data-i18n="f_any">Any status</button>
+            <button data-v="pending" class="px-3 py-1 rounded-md" data-i18n="f_pending">Pending</button>
+            <button data-v="paid" class="px-3 py-1 rounded-md" data-i18n="f_paid">Paid</button>
+          </div>
+        </div>
+      </div>
+      <div class="overflow-x-auto"><table class="w-full text-sm" id="payTable"></table></div>
+      <p id="payFooter" class="text-sm text-stone-500 mt-3"></p>
+    </div>
+  </section>
+
+</main>
+
+<div id="modal" style="display:none" class="fixed inset-0 z-50 items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-2xl shadow-xl p-5 w-full max-w-sm" role="dialog" aria-modal="true">
+    <p id="modalMsg" class="text-sm text-stone-700"></p>
+    <div class="mt-5 flex justify-end gap-2 text-sm">
+      <button type="button" id="modalNo" class="px-4 py-2 rounded-lg bg-stone-100 hover:bg-stone-200" data-i18n="cancel">Cancel</button>
+      <button type="button" id="modalYes" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-medium"></button>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast fixed bottom-5 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-sm px-4 py-2 rounded-lg opacity-0 pointer-events-none"></div>
+
+<script>
+(() => {
+  // ---------- Translations ----------
+  const I18N = {
+    en: {
+      title: 'Satay Supply Dashboard', subtitle: 'Vendor transactions & payment reconciliation',
+      export: 'Export CSV', clear: 'Clear all data',
+      tab_overview: 'Overview', tab_tx: 'Transactions', tab_pay: 'Payments',
+      outstanding: 'Outstanding by vendor', latest: 'Latest transactions',
+      record: 'Record a transaction', date: 'Date', type: 'Type',
+      type_purchase: 'Purchase Raw Material', type_resell: 'Re-sell Satay',
+      supplier_name: 'Supplier name', client_name: 'Vendor / client name',
+      item: 'Item', quantity: 'Quantity', unit_price: 'Unit price (RM)', total_rm: 'Total (RM)',
+      pay_status: 'Payment status', opt_pending: 'Pending', opt_settled: 'Already settled',
+      do_no: 'DO number', do_ph: 'e.g. DO-0001', c_do: 'DO No.',
+      store_warn: 'Saving is blocked in this view, so entries will be lost when you close or refresh. Save the file to your computer and open it from there.',
+      err_save: 'Could not save: ',
+      add: 'Add transaction', all_tx: 'All transactions', search_ph: 'Search vendor, DO or item…',
+      ledger: 'Payment & reconciliation ledger',
+      f_any: 'Any status', f_pending: 'Pending', f_paid: 'Paid',
+      c_date: 'Date', c_vendor: 'Vendor', c_item: 'Item', c_type: 'Type', c_total: 'Total',
+      c_status: 'Status', c_qty: 'Qty', c_unit: 'Unit price', c_amount: 'Amount', c_status_click: 'Status (click to change)',
+      b_received: 'Received', b_paid: 'Paid', b_toreceive: 'Yet to receive', b_unpaid: 'Unpaid',
+      t_purchase: 'Purchase', t_resell: 'Re-sell',
+      m_recv: 'Total receivable', m_recv_sub: 'Vendors still owe us',
+      m_owed: 'Total owed', m_owed_sub: 'We still owe suppliers',
+      m_net: 'Net position', m_net_sub: 'Receivable − owed',
+      none_out: 'Nothing outstanding 🎉', no_tx: 'No transactions yet',
+      no_match: 'No matching transactions', no_match_filter: 'No transactions match these filters',
+      footer: (n, v) => `${n} record${n === 1 ? '' : 's'} shown · combined value ${v}`,
+      toast_status: 'Status updated', toast_added: 'Transaction added',
+      toast_deleted: 'Transaction deleted', toast_cleared: 'All data cleared',
+      cancel: 'Cancel',
+      username: 'Username', password: 'Password', sign_in: 'Sign in', logout: 'Sign out',
+      login_err: 'Wrong username or password.',
+      login_load_err: 'Cannot load users.json. Open this app from a web server (http/https), not directly from the file.',
+      no_crypto: 'Sign-in needs a secure page (https or localhost).',
+      role_admin: 'Admin', role_staff: 'Staff',
+      backup: 'Backup (JSON)', import: 'Restore (JSON)', restore: 'Replace',
+      confirm_import: n => `Replace all current data with ${n} transaction${n === 1 ? '' : 's'} from this file?`,
+      import_bad: 'This file is not a valid data.json backup.', toast_imported: 'Data restored',
+      confirm_del: 'Delete this transaction?', confirm_clear: 'Delete ALL transactions? This cannot be undone.',
+      del: 'Delete', u_kg: 'kg', u_sticks: 'sticks',
+      csv_head: ['Date', 'Vendor', 'DO No.', 'Item', 'Type', 'Quantity', 'Unit Price', 'Total', 'Status'],
+      csv_purchase: 'Purchase Raw Material', csv_resell: 'Re-sell Satay',
+      csv_paid: 'Paid', csv_pending: 'Pending', csv_file: 'transactions-',
+      locale: 'en-GB'
+    },
+    ms: {
+      title: 'Papan Pemuka Bekalan Satay', subtitle: 'Transaksi vendor & penyesuaian pembayaran',
+      export: 'Eksport CSV', clear: 'Padam semua data',
+      tab_overview: 'Ringkasan', tab_tx: 'Transaksi', tab_pay: 'Pembayaran',
+      outstanding: 'Baki tertunggak mengikut vendor', latest: 'Transaksi terkini',
+      record: 'Rekod transaksi', date: 'Tarikh', type: 'Jenis',
+      type_purchase: 'Pembelian Bahan Mentah', type_resell: 'Jual Semula Satay',
+      supplier_name: 'Nama pembekal', client_name: 'Nama vendor / pelanggan',
+      item: 'Item', quantity: 'Kuantiti', unit_price: 'Harga seunit (RM)', total_rm: 'Jumlah (RM)',
+      pay_status: 'Status pembayaran', opt_pending: 'Belum selesai', opt_settled: 'Sudah selesai',
+      do_no: 'Nombor DO', do_ph: 'cth. DO-0001', c_do: 'No. DO',
+      store_warn: 'Penyimpanan disekat dalam paparan ini, jadi entri akan hilang apabila anda tutup atau muat semula. Simpan fail ke komputer dan buka dari sana.',
+      err_save: 'Tidak dapat simpan: ',
+      add: 'Tambah transaksi', all_tx: 'Semua transaksi', search_ph: 'Cari vendor, DO atau item…',
+      ledger: 'Lejar pembayaran & penyesuaian',
+      f_any: 'Semua status', f_pending: 'Belum selesai', f_paid: 'Selesai',
+      c_date: 'Tarikh', c_vendor: 'Vendor', c_item: 'Item', c_type: 'Jenis', c_total: 'Jumlah',
+      c_status: 'Status', c_qty: 'Kuantiti', c_unit: 'Harga seunit', c_amount: 'Jumlah', c_status_click: 'Status (klik untuk tukar)',
+      b_received: 'Diterima', b_paid: 'Dibayar', b_toreceive: 'Belum diterima', b_unpaid: 'Belum dibayar',
+      t_purchase: 'Pembelian', t_resell: 'Jual semula',
+      m_recv: 'Jumlah belum diterima', m_recv_sub: 'Vendor masih berhutang dengan kita',
+      m_owed: 'Jumlah hutang kita', m_owed_sub: 'Kita masih berhutang dengan pembekal',
+      m_net: 'Kedudukan bersih', m_net_sub: 'Belum diterima − hutang',
+      none_out: 'Tiada baki tertunggak 🎉', no_tx: 'Tiada transaksi lagi',
+      no_match: 'Tiada transaksi sepadan', no_match_filter: 'Tiada transaksi sepadan dengan penapis ini',
+      footer: (n, v) => `${n} rekod dipaparkan · jumlah nilai ${v}`,
+      toast_status: 'Status dikemas kini', toast_added: 'Transaksi ditambah',
+      toast_deleted: 'Transaksi dipadam', toast_cleared: 'Semua data dipadam',
+      cancel: 'Batal',
+      username: 'Nama pengguna', password: 'Kata laluan', sign_in: 'Log masuk', logout: 'Log keluar',
+      login_err: 'Nama pengguna atau kata laluan salah.',
+      login_load_err: 'Tidak dapat memuatkan users.json. Buka aplikasi ini melalui pelayan web (http/https), bukan terus dari fail.',
+      no_crypto: 'Log masuk memerlukan halaman selamat (https atau localhost).',
+      role_admin: 'Admin', role_staff: 'Kakitangan',
+      backup: 'Sandaran (JSON)', import: 'Pulihkan (JSON)', restore: 'Ganti',
+      confirm_import: n => `Gantikan semua data semasa dengan ${n} transaksi daripada fail ini?`,
+      import_bad: 'Fail ini bukan sandaran data.json yang sah.', toast_imported: 'Data dipulihkan',
+      confirm_del: 'Padam transaksi ini?', confirm_clear: 'Padam SEMUA transaksi? Tindakan ini tidak boleh dibatalkan.',
+      del: 'Padam', u_kg: 'kg', u_sticks: 'batang',
+      csv_head: ['Tarikh', 'Vendor', 'No. DO', 'Item', 'Jenis', 'Kuantiti', 'Harga Seunit', 'Jumlah', 'Status'],
+      csv_purchase: 'Pembelian Bahan Mentah', csv_resell: 'Jual Semula Satay',
+      csv_paid: 'Selesai', csv_pending: 'Belum selesai', csv_file: 'transaksi-',
+      locale: 'ms-MY'
+    }
+  };
+
+  const LANG_KEY = 'satay-dashboard-lang';
+  let lang = 'en';
+  try {
+    const saved = localStorage.getItem(LANG_KEY);
+    if (saved && I18N[saved]) lang = saved;
+    else if ((navigator.language || '').toLowerCase().startsWith('ms')) lang = 'ms';
+  } catch (e) {}
+  const t = k => I18N[lang][k];
+
+  // ---------- Config ----------
+  const ITEMS = [
+    { name: 'Beef Topside',  kind: 'raw',      unit: 'kg' },
+    { name: 'Chicken Chop',  kind: 'raw',      unit: 'kg' },
+    { name: 'Satay Ayam',    kind: 'finished', unit: 'sticks' },
+    { name: 'Satay Daging',  kind: 'finished', unit: 'sticks' },
+  ];
+  const BY_NAME = Object.fromEntries(ITEMS.map(i => [i.name, i]));
+  const unitLabel = name => t('u_' + BY_NAME[name].unit);
+  const KEY = 'satay-dashboard-v2';
+
+  // ---------- State ----------
+  let hadStored = false;
+  let state = load();
+  let ui = { tab: 'overview', status: 'all', q: '' };
+
+  function today() {
+    const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function blank() { return { tx: [] }; }
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) { hadStored = true; return JSON.parse(raw); }
+    } catch (e) {}
+    return blank();
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch (e) { $('#storeWarn').classList.remove('hidden'); }
+  }
+
+  // ---------- Helpers ----------
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const rm = n => 'RM ' + Number(n).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const num = n => Number(n).toLocaleString('en-MY', { maximumFractionDigits: 2 });
+  const total = x => Math.round(x.qty * x.price * 100) / 100;
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const fmtDate = d => new Date(d + 'T00:00:00').toLocaleDateString(t('locale'), { day: '2-digit', month: 'short', year: 'numeric' });
+
+  function toast(msg) {
+    const el = $('#toast'); el.textContent = msg;
+    el.style.opacity = 1; el.style.transform = 'translate(-50%,0)';
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => { el.style.opacity = 0; }, 2200);
+  }
+
+  const badge = x => x.status === 'paid'
+    ? `<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">${x.type === 'resell' ? t('b_received') : t('b_paid')}</span>`
+    : `<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">${x.type === 'resell' ? t('b_toreceive') : t('b_unpaid')}</span>`;
+
+  const doText = x => x.doNo ? esc(x.doNo) : '<span class="text-stone-300">—</span>';
+  const statusSelect = x => {
+    const [pendingLbl, paidLbl] = x.type === 'resell' ? [t('b_toreceive'), t('b_received')] : [t('b_unpaid'), t('b_paid')];
+    const cls = x.status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200';
+    return `<select data-status="${x.id}" class="rounded-full border px-3 py-1 text-xs font-medium cursor-pointer ${cls}">
+      <option value="pending" ${x.status === 'pending' ? 'selected' : ''}>${pendingLbl}</option>
+      <option value="paid" ${x.status === 'paid' ? 'selected' : ''}>${paidLbl}</option>
+    </select>`;
+  };
+  const typeBadge = x => x.type === 'purchase'
+    ? `<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-700">${t('t_purchase')}</span>`
+    : `<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">${t('t_resell')}</span>`;
+
+  const th = cols => `<thead><tr class="text-left text-stone-500 border-b border-stone-200">${cols.map(c => `<th class="py-2 pr-4 font-medium whitespace-nowrap ${c.r ? 'text-right' : ''}">${c.t}</th>`).join('')}</tr></thead>`;
+  const sorted = () => [...state.tx].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  const empty = (cols, msg) => `<tbody><tr><td colspan="${cols}" class="py-8 text-center text-stone-400">${msg}</td></tr></tbody>`;
+
+  // ---------- Renders ----------
+  function renderMetrics() {
+    const recv = state.tx.filter(x => x.type === 'resell' && x.status === 'pending').reduce((s, x) => s + total(x), 0);
+    const owed = state.tx.filter(x => x.type === 'purchase' && x.status === 'pending').reduce((s, x) => s + total(x), 0);
+    const net = recv - owed;
+    const card = (label, val, sub, color) => `
+      <div class="bg-white rounded-2xl shadow-sm p-4 border-l-4 ${color}">
+        <div class="text-xs uppercase tracking-wide text-stone-500">${label}</div>
+        <div class="text-xl sm:text-2xl font-bold mt-1">${val}</div>
+        <div class="text-xs text-stone-400 mt-1">${sub}</div>
+      </div>`;
+    $('#metrics').innerHTML =
+      card(t('m_recv'), rm(recv), t('m_recv_sub'), 'border-emerald-500') +
+      card(t('m_owed'), rm(owed), t('m_owed_sub'), 'border-rose-500') +
+      card(t('m_net'), (net >= 0 ? '+' : '−') + rm(Math.abs(net)), t('m_net_sub'), net >= 0 ? 'border-emerald-500' : 'border-rose-500');
+  }
+
+  function renderOverview() {
+    const map = {};
+    state.tx.filter(x => x.status === 'pending').forEach(x => {
+      const v = map[x.vendor] ||= { recv: 0, owed: 0 };
+      if (x.type === 'resell') v.recv += total(x); else v.owed += total(x);
+    });
+    const rows = Object.entries(map).sort((a, b) => (b[1].recv + b[1].owed) - (a[1].recv + a[1].owed));
+    $('#ovVendors').innerHTML = rows.length ? rows.map(([n, v]) => `
+      <div class="flex justify-between items-center border-b border-stone-100 pb-2">
+        <span class="font-medium">${esc(n)}</span>
+        <span class="text-right">
+          ${v.recv ? `<span class="text-emerald-600">+${rm(v.recv)}</span>` : ''}
+          ${v.recv && v.owed ? ' · ' : ''}
+          ${v.owed ? `<span class="text-rose-600">−${rm(v.owed)}</span>` : ''}
+        </span></div>`).join('') : `<p class="text-stone-400">${t('none_out')}</p>`;
+
+    const cols = [{t:t('c_date')},{t:t('c_vendor')},{t:t('c_item')},{t:t('c_type')},{t:t('c_total'),r:1},{t:t('c_status')}];
+    const recent = sorted().slice(0, 5);
+    $('#ovRecent').innerHTML = th(cols) + (recent.length ? `<tbody>${recent.map(x => `
+      <tr class="border-b border-stone-100"><td class="py-2 pr-4 whitespace-nowrap">${fmtDate(x.date)}</td><td class="pr-4">${esc(x.vendor)}</td>
+      <td class="pr-4">${x.item}</td><td class="pr-4">${typeBadge(x)}</td><td class="pr-4 text-right">${rm(total(x))}</td><td>${badge(x)}</td></tr>`).join('')}</tbody>` : empty(6, t('no_tx')));
+  }
+
+  function renderTx() {
+    const q = ui.q.toLowerCase();
+    const list = sorted().filter(x => !q || x.vendor.toLowerCase().includes(q) || x.item.toLowerCase().includes(q) || (x.doNo || '').toLowerCase().includes(q));
+    const cols = [{t:t('c_date')},{t:t('c_vendor')},{t:t('c_do')},{t:t('c_item')},{t:t('c_type')},{t:t('c_qty'),r:1},{t:t('c_unit'),r:1},{t:t('c_total'),r:1},{t:t('c_status')},{t:''}];
+    $('#txTable').innerHTML = th(cols) + (list.length ? `<tbody>${list.map(x => `
+      <tr class="border-b border-stone-100 hover:bg-stone-50">
+        <td class="py-2 pr-4 whitespace-nowrap">${fmtDate(x.date)}</td>
+        <td class="pr-4">${esc(x.vendor)}</td>
+        <td class="pr-4">${x.type === 'resell'
+          ? `<input data-do="${x.id}" value="${esc(x.doNo || '')}" placeholder="${t('do_ph')}" class="w-28 rounded-md border border-stone-200 px-2 py-1 text-xs">`
+          : doText(x)}</td>
+        <td class="pr-4">${x.item}</td><td class="pr-4">${typeBadge(x)}</td>
+        <td class="pr-4 text-right whitespace-nowrap">${num(x.qty)} ${unitLabel(x.item)}</td>
+        <td class="pr-4 text-right">${rm(x.price)}</td>
+        <td class="pr-4 text-right font-semibold">${rm(total(x))}</td>
+        <td class="pr-4">${statusSelect(x)}</td>
+        <td class="text-right"><button data-del="${x.id}" class="admin-only text-stone-400 hover:text-rose-600" title="${t('del')}">✕</button></td>
+      </tr>`).join('')}</tbody>` : empty(10, t('no_match')));
+  }
+
+  function renderPayments() {
+    $$('#statusFilter button').forEach(b => b.className = 'px-3 py-1 rounded-md ' + (b.dataset.v === ui.status ? 'bg-white shadow-sm text-amber-700 font-medium' : 'text-stone-500'));
+    const list = sorted().filter(x => ui.status === 'all' || x.status === ui.status);
+    const cols = [{t:t('c_date')},{t:t('c_status_click')},{t:t('c_vendor')},{t:t('c_do')},{t:t('c_item')},{t:t('c_amount'),r:1}];
+    $('#payTable').innerHTML = th(cols) + (list.length ? `<tbody>${list.map(x => `
+      <tr class="border-b border-stone-100 hover:bg-stone-50">
+        <td class="py-2.5 pr-4 whitespace-nowrap">${fmtDate(x.date)}</td>
+        <td class="pr-4">${statusSelect(x)}</td>
+        <td class="pr-4">${esc(x.vendor)}</td><td class="pr-4 whitespace-nowrap">${doText(x)}</td><td class="pr-4">${x.item} <span class="text-stone-400">× ${num(x.qty)}</span></td>
+        <td class="pr-4 text-right font-semibold">${rm(total(x))}</td>
+      </tr>`).join('')}</tbody>` : empty(6, t('no_match_filter')));
+    const sum = list.reduce((s, x) => s + total(x), 0);
+    $('#payFooter').textContent = t('footer')(list.length, rm(sum));
+  }
+
+  function renderAll() {
+    renderMetrics(); renderOverview(); renderTx(); renderPayments();
+    $('#vendorList').innerHTML = [...new Set(state.tx.map(x => x.vendor))].map(v => `<option value="${esc(v)}">`).join('');
+  }
+
+  function setTab(tab) {
+    ui.tab = tab;
+    ['overview', 'transactions', 'payments'].forEach(n => $('#tab-' + n).classList.toggle('hidden', n !== tab));
+    $$('#tabs .tab').forEach(b => b.className = 'tab px-4 py-2 rounded-lg ' + (b.dataset.tab === tab ? 'tab-active' : 'text-stone-600'));
+  }
+
+  // ---------- Form logic ----------
+  function syncForm() {
+    const type = $('#fType').value;
+    const cur = $('#fItem').value;
+    const items = ITEMS.filter(i => type === 'purchase' ? i.kind === 'raw' : i.kind === 'finished');
+    $('#fItem').innerHTML = items.map(i => `<option>${i.name}</option>`).join('');
+    if (items.some(i => i.name === cur)) $('#fItem').value = cur;
+    $('#fDoWrap').classList.toggle('hidden', type !== 'resell');
+    $('#fVendorLabel').textContent = type === 'purchase' ? t('supplier_name') : t('client_name');
+    $('#fUnit').textContent = '(' + unitLabel($('#fItem').value) + ')';
+    updateTotal();
+  }
+  function updateTotal() {
+    $('#fTotal').value = (Math.round((+$('#fQty').value || 0) * (+$('#fPrice').value || 0) * 100) / 100).toFixed(2);
+  }
+
+  // ---------- Language ----------
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.title = t('title');
+    $$('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+    $$('#langSwitch button').forEach(b => {
+      const on = b.dataset.lang === lang;
+      b.className = 'px-3 py-1 rounded-md font-medium ' + (on ? 'bg-white text-amber-700 shadow-sm' : 'text-white/90 hover:bg-white/10');
+      b.setAttribute('aria-pressed', on);
+    });
+    $$('#loginLang button').forEach(b => {
+      const on = b.dataset.lang === lang;
+      b.className = 'px-3 py-1 rounded-md text-xs font-medium ' + (on ? 'bg-amber-600 text-white' : 'text-stone-500 hover:bg-stone-100');
+    });
+    refreshChip();
+    syncForm(); renderAll();
+  }
+
+  // ---------- In-page confirm dialog (native confirm() is blocked in some embedded views) ----------
+  let pendingConfirm = null;
+  function closeConfirm() { $('#modal').style.display = 'none'; pendingConfirm = null; }
+  function askConfirm(msg, okLabel, onOk) {
+    $('#modalMsg').textContent = msg; $('#modalYes').textContent = okLabel;
+    pendingConfirm = onOk; $('#modal').style.display = 'flex'; $('#modalNo').focus();
+  }
+  $('#modalYes').addEventListener('click', () => { const cb = pendingConfirm; closeConfirm(); if (cb) cb(); });
+  $('#modalNo').addEventListener('click', closeConfirm);
+  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeConfirm(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeConfirm(); });
+
+  // ---------- Events ----------
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-lang]'); if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (err) {}
+    applyLang();
+  });
+  $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTab(b.dataset.tab); });
+  $('#fType').addEventListener('change', syncForm);
+  $('#fItem').addEventListener('change', syncForm);
+  $('#fQty').addEventListener('input', updateTotal);
+  $('#fPrice').addEventListener('input', updateTotal);
+  $('#txSearch').addEventListener('input', e => { ui.q = e.target.value; renderTx(); });
+  document.addEventListener('change', e => {
+    const d = e.target.closest('[data-do]');
+    if (d) { state.tx.find(x => x.id === d.dataset.do).doNo = d.value.trim(); save(); renderAll(); toast(t('toast_status')); return; }
+    const s = e.target.closest('[data-status]'); if (!s) return;
+    state.tx.find(x => x.id === s.dataset.status).status = s.value;
+    save(); renderAll(); toast(t('toast_status'));
+  });
+  $('#statusFilter').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) { ui.status = b.dataset.v; renderPayments(); } });
+
+  function addTx() {
+    const form = $('#txForm');
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    try {
+      const x = {
+        id: uid(), date: $('#fDate').value, vendor: $('#fVendor').value.trim(), item: $('#fItem').value,
+        type: $('#fType').value, qty: +$('#fQty').value, price: +$('#fPrice').value, status: $('#fPaid').value
+      };
+      if (x.type === 'resell') x.doNo = $('#fDo').value.trim();
+      if (!x.vendor || !(x.qty > 0) || !(x.price >= 0)) { form.reportValidity(); return; }
+      state.tx.push(x); save(); renderAll();
+      $('#fVendor').value = ''; $('#fDo').value = ''; $('#fQty').value = ''; $('#fPrice').value = ''; $('#fPaid').value = 'pending'; updateTotal();
+      toast(t('toast_added'));
+    } catch (err) {
+      toast(t('err_save') + err.message);
+    }
+  }
+  // Handle both the button click and Enter key; also block native submit (some embedded views disallow forms)
+  $('#txForm').addEventListener('submit', e => { e.preventDefault(); });
+  $('#txForm button:not([type="button"])').addEventListener('click', e => { e.preventDefault(); addTx(); });
+
+  document.addEventListener('click', e => {
+    const del = e.target.closest('[data-del]');
+    if (del) askConfirm(t('confirm_del'), t('del'), () => {
+      state.tx = state.tx.filter(x => x.id !== del.dataset.del); save(); renderAll(); toast(t('toast_deleted'));
+    });
+  });
+
+  $('#btnReset').addEventListener('click', () => {
+    askConfirm(t('confirm_clear'), t('clear'), () => { state = blank(); save(); renderAll(); toast(t('toast_cleared')); });
+  });
+
+  $('#btnExport').addEventListener('click', () => {
+    const rows = sorted().map(x => [x.date, x.vendor, x.doNo || '', x.item, x.type === 'purchase' ? t('csv_purchase') : t('csv_resell'),
+      x.qty, x.price, total(x).toFixed(2), x.status === 'paid' ? t('csv_paid') : t('csv_pending')]);
+    const csv = [t('csv_head'), ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' }));
+    a.download = t('csv_file') + today() + '.csv'; a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  // ---------- Auth (users.json) ----------
+  // Passwords are stored as SHA-256 of "<username lowercase>:<password>". This is a convenience gate for a
+  // static app, not real security: anyone who can open the site can read users.json.
+  const SESSION_KEY = 'satay-session';
+  let session = null;
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  async function loadUsers() {
+    const r = await fetch('users.json', { cache: 'no-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    return Array.isArray(j) ? j : (j.users || []);
+  }
+  function refreshChip() {
+    $('#userChip').textContent = session ? `${session.name} · ${t(session.role === 'admin' ? 'role_admin' : 'role_staff')}` : '';
+  }
+  function setSession(sess) {
+    session = sess;
+    document.body.dataset.role = sess ? sess.role : '';
+    $('#login').style.display = sess ? 'none' : 'flex';
+    refreshChip();
+  }
+  function logout() {
+    try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+    setSession(null);
+  }
+  async function doLogin() {
+    const err = $('#loginErr'); err.style.display = 'none';
+    const showErr = k => { err.textContent = t(k); err.style.display = 'block'; };
+    const u = $('#lUser').value.trim(), p = $('#lPass').value;
+    if (!u || !p) return showErr('login_err');
+    try {
+      if (!(window.crypto && crypto.subtle)) throw new Error('nocrypto');
+      const users = await loadUsers();
+      const h = await sha256(u.toLowerCase() + ':' + p);
+      const found = users.find(x => String(x.username).toLowerCase() === u.toLowerCase() && x.passwordHash === h && x.active !== false);
+      if (!found) return showErr('login_err');
+      const sess = { username: found.username, name: found.name || found.username, role: found.role === 'admin' ? 'admin' : 'staff' };
+      try { localStorage.setItem(SESSION_KEY, JSON.stringify(sess)); } catch (e) {}
+      $('#lPass').value = '';
+      setSession(sess);
+    } catch (e) {
+      showErr(e.message === 'nocrypto' ? 'no_crypto' : 'login_load_err');
+    }
+  }
+  function restoreSession() {
+    let sess = null;
+    try { sess = JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) {}
+    if (!sess || !sess.username) return setSession(null);
+    setSession(sess);
+    // re-check against users.json when reachable (removes deactivated users, refreshes role/name)
+    loadUsers().then(users => {
+      const u = users.find(x => String(x.username).toLowerCase() === String(sess.username).toLowerCase() && x.active !== false);
+      if (!u) return logout();
+      const fresh = { username: u.username, name: u.name || u.username, role: u.role === 'admin' ? 'admin' : 'staff' };
+      try { localStorage.setItem(SESSION_KEY, JSON.stringify(fresh)); } catch (e) {}
+      setSession(fresh);
+    }).catch(() => {});
+  }
+  $('#loginForm').addEventListener('submit', e => e.preventDefault());
+  $('#loginBtn').addEventListener('click', e => { e.preventDefault(); doLogin(); });
+  $('#btnLogout').addEventListener('click', logout);
+
+  // ---------- Backup / restore (data.json) ----------
+  function cleanTx(arr) {
+    if (!Array.isArray(arr)) return null;
+    const seen = new Set(), out = [];
+    for (const r of arr) {
+      if (!r || !BY_NAME[r.item] || !['purchase', 'resell'].includes(r.type)) return null;
+      const qty = +r.qty, price = +r.price;
+      if (!(qty > 0) || !(price >= 0) || !/^\d{4}-\d{2}-\d{2}$/.test(String(r.date)) || !String(r.vendor || '').trim()) return null;
+      let id = String(r.id || ''); if (!id || seen.has(id)) id = uid(); seen.add(id);
+      const o = { id, date: r.date, vendor: String(r.vendor).trim(), item: r.item, type: r.type, qty, price, status: r.status === 'paid' ? 'paid' : 'pending' };
+      if (r.type === 'resell' && r.doNo) o.doNo = String(r.doNo).trim();
+      out.push(o);
+    }
+    return out;
+  }
+  $('#btnBackup').addEventListener('click', () => {
+    const data = { app: 'satay-dashboard', version: 1, exportedAt: new Date().toISOString(), transactions: state.tx };
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    a.download = 'data.json'; a.click(); URL.revokeObjectURL(a.href);
+  });
+  $('#btnImport').addEventListener('click', () => { $('#fImport').value = ''; $('#fImport').click(); });
+  $('#fImport').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let tx = null;
+      try { const j = JSON.parse(reader.result); tx = cleanTx(Array.isArray(j) ? j : j.transactions); } catch (err) {}
+      if (!tx) return toast(t('import_bad'));
+      askConfirm(t('confirm_import')(tx.length), t('restore'), () => { state = { tx }; save(); renderAll(); toast(t('toast_imported')); });
+    };
+    reader.readAsText(f);
+  });
+  // First run only: start from data.json (if it has transactions) when nothing is saved yet
+  async function seedFromDataJson() {
+    if (hadStored) return;
+    try {
+      const r = await fetch('data.json', { cache: 'no-cache' }); if (!r.ok) return;
+      const j = await r.json(); const tx = cleanTx(Array.isArray(j) ? j : j.transactions);
+      if (tx && tx.length && !hadStored) { state = { tx }; save(); renderAll(); }
+    } catch (e) {}
+  }
+
+  function registerSW() {
+    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    }
+  }
+
+  // ---------- Init ----------
+  $('#fDate').value = today();
+  try { localStorage.setItem('_t', '1'); localStorage.removeItem('_t'); } catch (e) { $('#storeWarn').classList.remove('hidden'); }
+  applyLang(); setTab('overview');
+  restoreSession(); seedFromDataJson(); registerSW();
+})();
+</script>
+</body>
+</html>
