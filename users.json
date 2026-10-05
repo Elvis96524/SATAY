@@ -14,6 +14,19 @@
       "role": "staff",
       "active": true,
       "passwordHash": "d15127858f71b6c259d34c4779c097f17f59c81ff986f67cc88aa6bb3ad72a0f"
+    },
+    {
+      "username": "AhBoi",
+      "name": "Suhardi",
+      "role": "staff",
+      "active": true,
+      "iter": 600000,
+      "salt": "P/bgzpuNSlMWUfk5edyabw==",
+      "verifier": "zx5EuLAOQc/jw31/L0g3w0FCS99PAzjzukxGbu1mo5o=",
+      "vault": {
+        "iv": "y80c0k83oxmAP7+c",
+        "ct": "UZPkp71lq2BiAuL/KtIRlubJkzf2DHqbabgrUxF56WZmX4kVmTfsOKMUdWilZS9IcF1jVEuTK013CiwXO37c3obArjXYUm+s3OaRTtgmRwahoVruV2SSj7lBgKDnGrDuPmJGStVEQJWXQdod7nOvbh8JJ2LnkiYCR4qqP6w+1gd3Po8I1gHwzckfv52ZvZLKUIvakvAi9WJxW+z9M9qXd3AefWZZF6GbXsDyejMefqr5Kg=="
+      }
     }
   ],
   "version": 2
