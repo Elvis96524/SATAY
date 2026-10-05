@@ -1,7 +1,7 @@
 {
   "app": "satay-dashboard",
   "version": 2,
-  "updatedAt": "2026-10-05T06:52:25.510Z",
+  "updatedAt": "2026-10-05T06:52:28.926Z",
   "transactions": [
     {
       "id": "0muuw0nm6ejbqgc",
@@ -30,16 +30,6 @@
       "item": "Satay Ayam",
       "type": "resell",
       "qty": 1400,
-      "price": 0.6,
-      "status": "pending"
-    },
-    {
-      "id": "0muuw0nm62p3lkn",
-      "date": "2026-10-05",
-      "vendor": "FSE",
-      "item": "Satay Ayam",
-      "type": "resell",
-      "qty": 1450,
       "price": 0.6,
       "status": "pending"
     }
