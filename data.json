@@ -1,7 +1,7 @@
 {
   "app": "satay-dashboard",
   "version": 2,
-  "updatedAt": "2026-10-05T06:52:28.926Z",
+  "updatedAt": "2026-10-05T06:52:31.694Z",
   "transactions": [
     {
       "id": "0muuw0nm6ejbqgc",
@@ -11,16 +11,6 @@
       "type": "purchase",
       "qty": 20,
       "price": 24,
-      "status": "pending"
-    },
-    {
-      "id": "0muuw0nm6mod1l4",
-      "date": "2026-10-03",
-      "vendor": "FSE",
-      "item": "Chicken Chop",
-      "type": "purchase",
-      "qty": 24,
-      "price": 12.5,
       "status": "pending"
     },
     {
