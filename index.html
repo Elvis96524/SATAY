@@ -56,6 +56,7 @@
         <button data-lang="en" class="px-3 py-1 rounded-md font-medium">EN</button>
         <button data-lang="ms" class="px-3 py-1 rounded-md font-medium">BM</button>
       </div>
+      <button type="button" id="syncChip" class="text-xs px-2 py-1 rounded-full bg-white/15" style="display:none"></button>
       <span id="userChip" class="text-amber-100 hidden sm:inline"></span>
       <button id="btnExport" class="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="export">Export CSV</button>
       <button id="btnReset" class="admin-only px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="clear">Clear all data</button>
@@ -63,7 +64,6 @@
     </div>
   </div>
 </header>
-<div id="storeWarn" class="hidden bg-rose-50 text-rose-700 text-sm px-4 py-2 text-center" data-i18n="store_warn"></div>
 
 <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
 
@@ -165,6 +165,33 @@
     </div>
   </div>
 </div>
+<div id="ghModal" style="display:none" class="fixed inset-0 z-50 items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-2xl shadow-xl p-5 w-full max-w-md max-h-full overflow-y-auto" role="dialog" aria-modal="true">
+    <h2 class="font-semibold text-lg" data-i18n="gh_title">Connect to GitHub</h2>
+    <p class="text-xs text-stone-500 mt-1" data-i18n="gh_help"></p>
+    <div class="mt-4 space-y-3 text-sm">
+      <label class="block"><span class="text-stone-500" data-i18n="gh_repo">Data repository (owner/name)</span>
+        <input id="ghRepo" autocomplete="off" autocapitalize="none" placeholder="owner/satay-data" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="text-stone-500" data-i18n="gh_branch">Branch (optional)</span>
+          <input id="ghBranch" autocomplete="off" autocapitalize="none" placeholder="main" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></label>
+        <label class="block"><span class="text-stone-500" data-i18n="gh_path">File</span>
+          <input id="ghPath" autocomplete="off" autocapitalize="none" placeholder="data.json" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></label>
+      </div>
+      <label class="block"><span class="text-stone-500" data-i18n="gh_token">Access token</span>
+        <input id="ghToken" type="password" autocomplete="off" placeholder="github_pat_..." class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></label>
+      <p class="text-xs text-stone-400" data-i18n="gh_token_note"></p>
+      <p id="ghErr" style="display:none" class="text-rose-600 text-xs"></p>
+    </div>
+    <div class="mt-5 flex flex-wrap justify-between gap-2 text-sm">
+      <button type="button" id="ghOff" class="px-3 py-2 rounded-lg text-rose-600 hover:bg-rose-50" data-i18n="gh_disconnect">Disconnect</button>
+      <div class="flex gap-2">
+        <button type="button" id="ghClose" class="px-4 py-2 rounded-lg bg-stone-100 hover:bg-stone-200" data-i18n="close">Close</button>
+        <button type="button" id="ghSave" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium" data-i18n="gh_save">Save &amp; connect</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="toast" class="toast fixed bottom-5 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-sm px-4 py-2 rounded-lg opacity-0 pointer-events-none"></div>
 
 <script>
@@ -182,7 +209,12 @@
       item: 'Item', quantity: 'Quantity', unit_price: 'Unit price (RM)', total_rm: 'Total (RM)',
       pay_status: 'Payment status', opt_pending: 'Pending', opt_settled: 'Already settled',
       do_no: 'DO number', do_ph: 'e.g. DO-0001', c_do: 'DO No.',
-      store_warn: 'Saving is blocked in this view, so entries will be lost when you close or refresh. Save the file to your computer and open it from there.',
+      sync_ok: 'Synced', sync_off: 'Offline - showing last saved data',
+      gh_title: 'Connect to GitHub', gh_help: 'Entries are saved to data.json in a GitHub repository, so every device shows the same data. Each device needs the access token once.', gh_repo: 'Data repository (owner/name)', gh_branch: 'Branch (optional)', gh_path: 'File', gh_token: 'Access token', gh_token_note: 'Use a fine-grained token limited to this one repository with Contents: Read and write. It stays in this browser only.', gh_save: 'Save & connect', gh_disconnect: 'Disconnect', close: 'Close', sync_none: 'Not connected - tap to set up', sync_err: 'Sync problem - tap to fix', toast_connected: 'Connected to GitHub', toast_disconnected: 'Disconnected', e_need: 'Enter the repository (owner/name) and the access token.', e_token: 'GitHub rejected the token. Check it is correct and has not expired.', e_access: 'The token cannot use this repository. It needs Contents: Read and write for it.', e_rate: 'GitHub is limiting requests right now. Try again in a minute.', e_repo: 'Repository not found, or the token cannot see it.', e_branch: 'Branch not found in the repository.', e_file: 'data.json has an invalid entry, so the app will not overwrite it. Fix the file on GitHub.', e_conflict: 'Several people saved at once. Please try again.', login_load_err: 'Cannot load users.json. Open this app from its web address (http/https), not from a file.', no_crypto: 'Sign-in needs a secure page (https or localhost).', err_net: 'Cannot reach GitHub. Check your internet connection.',
+      err_gone: 'That entry was already removed.',
+      login_limit: 'Too many attempts. Try again in a few minutes.',
+      upload: 'Upload', toast_uploaded: 'Entries uploaded',
+      upload_local: n => `Found ${n} entr${n === 1 ? 'y' : 'ies'} saved only on this device. Upload ${n === 1 ? 'it' : 'them'} to the shared data so every device can see ${n === 1 ? 'it' : 'them'}?`,
       err_save: 'Could not save: ',
       add: 'Add transaction', all_tx: 'All transactions', search_ph: 'Search vendor, DO or item…',
       ledger: 'Payment & reconciliation ledger',
@@ -202,8 +234,6 @@
       cancel: 'Cancel', admin_pw_ph: 'Enter admin password to confirm', admin_pw_wrong: 'Incorrect admin password.',
       username: 'Username', password: 'Password', sign_in: 'Sign in', logout: 'Sign out',
       login_err: 'Wrong username or password.',
-      login_load_err: 'Cannot load users.json. Open this app from a web server (http/https), not directly from the file.',
-      no_crypto: 'Sign-in needs a secure page (https or localhost).',
       role_admin: 'Admin', role_staff: 'Staff',
       confirm_del: 'Delete this transaction?', confirm_clear: 'Delete ALL transactions? This cannot be undone.',
       del: 'Delete', u_kg: 'kg', u_sticks: 'sticks',
@@ -223,7 +253,12 @@
       item: 'Item', quantity: 'Kuantiti', unit_price: 'Harga seunit (RM)', total_rm: 'Jumlah (RM)',
       pay_status: 'Status pembayaran', opt_pending: 'Belum selesai', opt_settled: 'Sudah selesai',
       do_no: 'Nombor DO', do_ph: 'cth. DO-0001', c_do: 'No. DO',
-      store_warn: 'Penyimpanan disekat dalam paparan ini, jadi entri akan hilang apabila anda tutup atau muat semula. Simpan fail ke komputer dan buka dari sana.',
+      sync_ok: 'Disegerakkan', sync_off: 'Luar talian - memaparkan data tersimpan terakhir',
+      gh_title: 'Sambung ke GitHub', gh_help: 'Entri disimpan dalam data.json di repositori GitHub supaya semua peranti memaparkan data yang sama. Setiap peranti memerlukan token akses sekali sahaja.', gh_repo: 'Repositori data (pemilik/nama)', gh_branch: 'Cabang (pilihan)', gh_path: 'Fail', gh_token: 'Token akses', gh_token_note: 'Gunakan token terperinci yang terhad kepada repositori ini dengan Contents: Read and write. Ia kekal dalam pelayar ini sahaja.', gh_save: 'Simpan & sambung', gh_disconnect: 'Putuskan', close: 'Tutup', sync_none: 'Belum disambung - ketik untuk tetapkan', sync_err: 'Masalah segerak - ketik untuk baiki', toast_connected: 'Disambung ke GitHub', toast_disconnected: 'Diputuskan', e_need: 'Masukkan repositori (pemilik/nama) dan token akses.', e_token: 'GitHub menolak token. Semak ia betul dan belum tamat tempoh.', e_access: 'Token tidak boleh menggunakan repositori ini. Ia memerlukan Contents: Read and write.', e_rate: 'GitHub sedang menghadkan permintaan. Cuba lagi sebentar lagi.', e_repo: 'Repositori tidak ditemui, atau token tidak dapat melihatnya.', e_branch: 'Cabang tidak ditemui dalam repositori.', e_file: 'data.json mempunyai entri tidak sah, jadi aplikasi tidak akan menimpanya. Baiki fail di GitHub.', e_conflict: 'Beberapa orang menyimpan serentak. Sila cuba lagi.', login_load_err: 'Tidak dapat memuatkan users.json. Buka aplikasi ini melalui alamat web (http/https), bukan dari fail.', no_crypto: 'Log masuk memerlukan halaman selamat (https atau localhost).', err_net: 'Tidak dapat menghubungi GitHub. Semak sambungan internet anda.',
+      err_gone: 'Entri itu sudah dibuang.',
+      login_limit: 'Terlalu banyak percubaan. Cuba lagi dalam beberapa minit.',
+      upload: 'Muat naik', toast_uploaded: 'Entri dimuat naik',
+      upload_local: n => `Terdapat ${n} entri disimpan pada peranti ini sahaja. Muat naik ke data kongsi supaya semua peranti dapat melihatnya?`,
       err_save: 'Tidak dapat simpan: ',
       add: 'Tambah transaksi', all_tx: 'Semua transaksi', search_ph: 'Cari vendor, DO atau item…',
       ledger: 'Lejar pembayaran & penyesuaian',
@@ -243,8 +278,6 @@
       cancel: 'Batal', admin_pw_ph: 'Masukkan kata laluan admin untuk mengesahkan', admin_pw_wrong: 'Kata laluan admin salah.',
       username: 'Nama pengguna', password: 'Kata laluan', sign_in: 'Log masuk', logout: 'Log keluar',
       login_err: 'Nama pengguna atau kata laluan salah.',
-      login_load_err: 'Tidak dapat memuatkan users.json. Buka aplikasi ini melalui pelayan web (http/https), bukan terus dari fail.',
-      no_crypto: 'Log masuk memerlukan halaman selamat (https atau localhost).',
       role_admin: 'Admin', role_staff: 'Kakitangan',
       confirm_del: 'Padam transaksi ini?', confirm_clear: 'Padam SEMUA transaksi? Tindakan ini tidak boleh dibatalkan.',
       del: 'Padam', u_kg: 'kg', u_sticks: 'batang',
@@ -273,29 +306,23 @@
   ];
   const BY_NAME = Object.fromEntries(ITEMS.map(i => [i.name, i]));
   const unitLabel = name => t('u_' + BY_NAME[name].unit);
-  const KEY = 'satay-dashboard-v2';
+  const CACHE_KEY = 'satay-cache-v3', GH_KEY = 'satay-gh', SESSION_KEY = 'satay-session';
+  const OLD_KEY = 'satay-dashboard-v2', MIGRATED_KEY = 'satay-migrated';
+  const POLL_MS = 10000;
 
   // ---------- State ----------
-  let hadStored = false;
-  let state = load();
+  // All data lives in data.json on GitHub. This is only the copy currently on screen (rev = the file's version on GitHub).
+  let state = { tx: [], rev: -1 };
   let ui = { tab: 'overview', status: 'all', q: '' };
+  let gh = null, ghDefaults = { repo: '', branch: '', path: 'data.json' }, etag = null, syncErr = '', session = null, online = true;
+
+  const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  const lsDel = k => { try { localStorage.removeItem(k); } catch (e) {} };
 
   function today() {
     const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     return d.toISOString().slice(0, 10);
-  }
-  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-  function blank() { return { tx: [] }; }
-  function load() {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) { hadStored = true; return JSON.parse(raw); }
-    } catch (e) {}
-    return blank();
-  }
-  function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch (e) { $('#storeWarn').classList.remove('hidden'); }
   }
 
   // ---------- Helpers ----------
@@ -457,42 +484,40 @@
   }
 
   // ---------- In-page confirm dialog (native confirm() is blocked in some embedded views) ----------
-  let pendingConfirm = null, pendingNeedsPass = false;
+  let pendingConfirm = null, pendingCancel = null, pendingNeedsPass = false;
   function closeConfirm() {
     $('#modal').style.display = 'none'; $('#modalPassWrap').style.display = 'none';
     $('#modalPass').value = ''; $('#modalErr').style.display = 'none';
-    pendingConfirm = null; pendingNeedsPass = false;
+    pendingConfirm = null; pendingCancel = null; pendingNeedsPass = false;
   }
-  function askConfirm(msg, okLabel, onOk, needsAdminPassword) {
+  function cancelConfirm() { const c = pendingCancel; closeConfirm(); if (c) c(); }
+  // onOk(password) may be async; with needsAdminPassword the dialog stays open until the server accepts the password.
+  function askConfirm(msg, okLabel, onOk, needsAdminPassword, onCancel) {
     $('#modalMsg').textContent = msg; $('#modalYes').textContent = okLabel;
-    pendingConfirm = onOk; pendingNeedsPass = !!needsAdminPassword;
+    pendingConfirm = onOk; pendingCancel = onCancel || null; pendingNeedsPass = !!needsAdminPassword;
     $('#modalPass').value = ''; $('#modalErr').style.display = 'none';
     $('#modalPassWrap').style.display = pendingNeedsPass ? 'block' : 'none';
     $('#modal').style.display = 'flex';
     (pendingNeedsPass ? $('#modalPass') : $('#modalNo')).focus();
   }
-  async function verifyAdminPassword(pw) {
-    if (!session || session.role !== 'admin' || !pw) return false;
-    if (!(window.crypto && crypto.subtle)) throw new Error('nocrypto');
-    const users = await loadUsers();
-    const u = users.find(x => String(x.username).toLowerCase() === session.username.toLowerCase() && x.role === 'admin' && x.active !== false);
-    return !!u && u.passwordHash === await sha256(session.username.toLowerCase() + ':' + pw);
-  }
   $('#modalYes').addEventListener('click', async () => {
-    if (!pendingConfirm) return;
-    if (pendingNeedsPass) {
-      const err = $('#modalErr'); err.style.display = 'none';
-      let ok = false;
-      try { ok = await verifyAdminPassword($('#modalPass').value); }
-      catch (e) { err.textContent = t(e.message === 'nocrypto' ? 'no_crypto' : 'login_load_err'); err.style.display = 'block'; return; }
-      if (!ok) { err.textContent = t('admin_pw_wrong'); err.style.display = 'block'; $('#modalPass').select(); return; }
-    }
-    const cb = pendingConfirm; closeConfirm(); if (cb) cb();
+    const cb = pendingConfirm; if (!cb) return;
+    if (!pendingNeedsPass) { pendingCancel = null; closeConfirm(); await cb(); return; }
+    const err = $('#modalErr'), btn = $('#modalYes'), pw = $('#modalPass').value;
+    err.style.display = 'none';
+    if (!pw) { err.textContent = t('admin_pw_wrong'); err.style.display = 'block'; return; }
+    btn.disabled = true;
+    try { await cb(pw); pendingCancel = null; closeConfirm(); }
+    catch (e) {
+      err.textContent = e.code === 'bad_password' ? t('admin_pw_wrong') : e.code === 'too_many' ? t('login_limit') : errText(e);
+      err.style.display = 'block';
+      if (e.code === 'bad_password') $('#modalPass').select();
+    } finally { btn.disabled = false; }
   });
   $('#modalPass').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#modalYes').click(); } });
-  $('#modalNo').addEventListener('click', closeConfirm);
-  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeConfirm(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeConfirm(); });
+  $('#modalNo').addEventListener('click', cancelConfirm);
+  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') cancelConfirm(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && pendingConfirm) cancelConfirm(); });
 
   // ---------- Events ----------
   document.addEventListener('click', e => {
@@ -509,28 +534,52 @@
   $('#txSearch').addEventListener('input', e => { ui.q = e.target.value; renderTx(); });
   document.addEventListener('change', e => {
     const d = e.target.closest('[data-do]');
-    if (d) { state.tx.find(x => x.id === d.dataset.do).doNo = d.value.trim(); save(); renderAll(); toast(t('toast_status')); return; }
-    const s = e.target.closest('[data-status]'); if (!s) return;
-    state.tx.find(x => x.id === s.dataset.status).status = s.value;
-    save(); renderAll(); toast(t('toast_status'));
+    if (d) return void updateTx(d.dataset.do, { doNo: d.value.trim() });
+    const s = e.target.closest('[data-status]');
+    if (s) updateTx(s.dataset.status, { status: s.value });
   });
   $('#statusFilter').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) { ui.status = b.dataset.v; renderPayments(); } });
 
-  function addTx() {
-    const form = $('#txForm');
+  async function addTx() {
+    const form = $('#txForm'), btn = $('#txForm button:not([type="button"])');
     if (!form.checkValidity()) { form.reportValidity(); return; }
+    const x = {
+      date: $('#fDate').value, vendor: $('#fVendor').value.trim(), item: $('#fItem').value,
+      type: $('#fType').value, qty: +$('#fQty').value, price: +$('#fPrice').value, status: $('#fPaid').value
+    };
+    if (x.type === 'resell') x.doNo = $('#fDo').value.trim();
+    if (!x.vendor || !(x.qty > 0) || !(x.price >= 0)) { form.reportValidity(); return; }
+    if (!gh) { openGh(); return; }
+    btn.disabled = true;
     try {
-      const x = {
-        id: uid(), date: $('#fDate').value, vendor: $('#fVendor').value.trim(), item: $('#fItem').value,
-        type: $('#fType').value, qty: +$('#fQty').value, price: +$('#fPrice').value, status: $('#fPaid').value
-      };
-      if (x.type === 'resell') x.doNo = $('#fDo').value.trim();
-      if (!x.vendor || !(x.qty > 0) || !(x.price >= 0)) { form.reportValidity(); return; }
-      state.tx.push(x); save(); renderAll();
+      const row = cleanOne(x, false);
+      applyServer(await commit(list => [...list, row]));
       $('#fVendor').value = ''; $('#fDo').value = ''; $('#fQty').value = ''; $('#fPrice').value = ''; $('#fPaid').value = 'pending'; updateTotal();
       toast(t('toast_added'));
     } catch (err) {
-      toast(t('err_save') + err.message);
+      toast(t('err_save') + errText(err));
+      if (err.code === 'bad_token' || err.code === 'no_access') { syncErr = err.code; refreshChip(); }
+    } finally { btn.disabled = false; }
+  }
+  async function updateTx(id, patch) {
+    if (!gh) { openGh(); renderAll(); return; }
+    try {
+      applyServer(await commit(list => {
+        const i = list.findIndex(x => x.id === id);
+        if (i < 0) throw gerr(404, 'not_found', 'Entry not found');
+        const row = { ...list[i] };
+        if ('status' in patch) { if (patch.status !== 'pending' && patch.status !== 'paid') throw gerr(400, 'bad_status'); row.status = patch.status; }
+        if ('doNo' in patch) {
+          if (row.type !== 'resell') throw gerr(400, 'bad_do', 'DO number is only for re-sell entries');
+          const v = String(patch.doNo == null ? '' : patch.doNo).trim().slice(0, 60);
+          if (v) row.doNo = v; else delete row.doNo;
+        }
+        const out = list.slice(); out[i] = row; return out;
+      }));
+      toast(t('toast_status'));
+    } catch (err) {
+      toast(t('err_save') + errText(err));
+      if (err.code === 'not_found') refresh(true); else renderAll();   // put the dropdown / box back to what is really saved
     }
   }
   // Handle both the button click and Enter key; also block native submit (some embedded views disallow forms)
@@ -539,14 +588,26 @@
 
   document.addEventListener('click', e => {
     const del = e.target.closest('[data-del]');
-    if (del) askConfirm(t('confirm_del'), t('del'), () => {
-      state.tx = state.tx.filter(x => x.id !== del.dataset.del); save(); renderAll(); toast(t('toast_deleted'));
+    if (del) askConfirm(t('confirm_del'), t('del'), async () => {
+      const id = del.dataset.del;
+      try {
+        applyServer(await commit(list => {
+          if (!list.some(x => x.id === id)) throw gerr(404, 'not_found', 'Entry not found');
+          return list.filter(x => x.id !== id);
+        }));
+        toast(t('toast_deleted'));
+      } catch (err) { toast(t('err_save') + errText(err)); if (err.code === 'not_found') refresh(true); }
     });
   });
 
   $('#btnReset').addEventListener('click', () => {
     if (!session || session.role !== 'admin') return;
-    askConfirm(t('confirm_clear'), t('clear'), () => { state = blank(); save(); renderAll(); toast(t('toast_cleared')); }, true);
+    // the admin password is checked here; the dialog stays open on a wrong password
+    askConfirm(t('confirm_clear'), t('clear'), async pw => {
+      if (!(await verifyAdminPassword(pw))) throw gerr(403, 'bad_password');
+      applyServer(await commit(() => []));
+      toast(t('toast_cleared'));
+    }, true);
   });
 
   $('#btnExport').addEventListener('click', () => {
@@ -558,23 +619,296 @@
     a.download = t('csv_file') + today() + '.csv'; a.click(); URL.revokeObjectURL(a.href);
   });
 
-  // ---------- Auth (users.json) ----------
-  // Passwords are stored as SHA-256 of "<username lowercase>:<password>". This is a convenience gate for a
-  // static app, not real security: anyone who can open the site can read users.json.
-  const SESSION_KEY = 'satay-session';
-  let session = null;
+  // ---------- GitHub storage ----------
+  // The shared data is data.json in a GitHub repository, read and written through GitHub's API.
+  // Every save re-reads the latest file first when someone else changed it, so two people saving at the same moment never overwrite each other.
+  const toB64 = str => {
+    const b = new TextEncoder().encode(str); let bin = '';
+    for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+    return btoa(bin);
+  };
+  const fromB64 = b64 => new TextDecoder().decode(Uint8Array.from(atob(String(b64).replace(/\s/g, '')), c => c.charCodeAt(0)));
+  const gerr = (status, code, message) => Object.assign(new Error(message || code), { status, code });
+  const ITEM_KIND = Object.fromEntries(ITEMS.map(i => [i.name, i.kind]));
+  function validDate(d) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(d))) return false;
+    const x = new Date(d + 'T00:00:00Z');
+    return !isNaN(x) && x.toISOString().slice(0, 10) === d;
+  }
+  const newId = () => Date.now().toString(36).padStart(9, '0') + Math.random().toString(36).slice(2, 8);
+  function cleanOne(r, keepId) {
+    const bad = m => gerr(400, 'invalid_transaction', m);
+    if (!r || typeof r !== 'object') throw bad('Not an object');
+    const kind = ITEM_KIND[r.item];
+    if (!kind) throw bad('Unknown item');
+    if (r.type !== 'purchase' && r.type !== 'resell') throw bad('Unknown type');
+    if ((r.type === 'purchase') !== (kind === 'raw')) throw bad('Item does not match type');
+    const qty = Number(r.qty), price = Number(r.price);
+    if (!Number.isFinite(qty) || qty <= 0 || qty > 1e9) throw bad('Bad quantity');
+    if (!Number.isFinite(price) || price < 0 || price > 1e9) throw bad('Bad price');
+    if (!validDate(r.date)) throw bad('Bad date');
+    const vendor = String(r.vendor == null ? '' : r.vendor).trim().slice(0, 120);
+    if (!vendor) throw bad('Vendor is required');
+    const row = {
+      id: keepId && typeof r.id === 'string' && /^[\w-]{1,40}$/.test(r.id) ? r.id : newId(),
+      date: r.date, vendor, item: r.item, type: r.type, qty, price, status: r.status === 'paid' ? 'paid' : 'pending'
+    };
+    const doNo = String(r.doNo == null ? '' : r.doNo).trim().slice(0, 60);
+    if (r.type === 'resell' && doNo) row.doNo = doNo;
+    return row;
+  }
+  function cleanList(arr, keepId) {
+    if (!Array.isArray(arr)) throw gerr(400, 'invalid_transaction', 'Expected a list');
+    const seen = new Set();
+    return arr.map(r => { const row = cleanOne(r, keepId); while (seen.has(row.id)) row.id = newId(); seen.add(row.id); return row; });
+  }
+  function parseData(text) {
+    if (!String(text).trim()) return [];
+    let j; try { j = JSON.parse(text); } catch (e) { throw gerr(0, 'bad_file', 'data.json is not valid JSON'); }
+    try { return cleanList(Array.isArray(j) ? j : (j.transactions || []), true); }
+    catch (e) { throw gerr(0, 'bad_file', e.message); }   // never treat a damaged file as empty: the next save would erase it
+  }
+
+  const repoApi = () => 'https://api.github.com/repos/' + gh.repo;
+  const filePath = () => (gh.path || 'data.json').replace(/^\/+/, '').split('/').map(encodeURIComponent).join('/');
+  async function ghFetch(method, url, body, headers) {
+    let res;
+    try {
+      res = await fetch(url, {
+        method, cache: 'no-store',
+        headers: Object.assign({ Accept: 'application/vnd.github+json', Authorization: 'Bearer ' + gh.token },
+          body !== undefined ? { 'Content-Type': 'application/json' } : {}, headers || {}),
+        body: body === undefined ? undefined : JSON.stringify(body)
+      });
+    } catch (e) { setOnline(false); throw gerr(0, 'network', 'network'); }
+    setOnline(true);
+    return res;
+  }
+  async function ghError(res) {
+    let j = null; try { j = await res.json(); } catch (e) {}
+    const msg = (j && j.message) || 'HTTP ' + res.status;
+    let code = 'gh_error';
+    if (res.status === 401) code = 'bad_token';
+    else if (res.status === 403 || res.status === 429) code = /rate limit/i.test(msg) || res.status === 429 ? 'rate_limit' : 'no_access';
+    else if (res.status === 404) code = /ref/i.test(msg) ? 'branch_not_found' : 'repo_not_found';
+    return gerr(res.status, code, msg);
+  }
+  // Returns { tx, sha, etag } (sha null = the file does not exist yet) or { unchanged: true }.
+  async function ghRead(ifNoneMatch) {
+    const url = repoApi() + '/contents/' + filePath() + (gh.branch ? '?ref=' + encodeURIComponent(gh.branch) : '');
+    const res = await ghFetch('GET', url, undefined, ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : undefined);
+    if (res.status === 304) return { unchanged: true };
+    if (res.status === 404) {
+      const e = await ghError(res);
+      if (e.code === 'branch_not_found') throw e;
+      return { tx: [], sha: null, etag: null };              // no data.json yet: it is created on the first save
+    }
+    if (!res.ok) throw await ghError(res);
+    const j = await res.json();
+    if (Array.isArray(j) || j.type === 'dir') throw gerr(0, 'bad_file', 'That path is a folder');
+    let text;
+    if (j.encoding === 'base64' && j.content != null && j.content !== '') text = fromB64(j.content);
+    else {                                                   // files over 1 MB come back without content: ask for the raw file
+      const r2 = await ghFetch('GET', url, undefined, { Accept: 'application/vnd.github.raw+json' });
+      if (!r2.ok) throw await ghError(r2);
+      text = await r2.text();
+    }
+    return { tx: parseData(text), sha: j.sha, etag: res.headers.get('ETag') };
+  }
+  async function ghWrite(tx, sha) {
+    const body = {
+      message: 'Update data (' + (session ? session.username : 'app') + ')',
+      content: toB64(JSON.stringify({ app: 'satay-dashboard', version: 2, updatedAt: new Date().toISOString(), transactions: tx }, null, 2) + '\n')
+    };
+    if (sha) body.sha = sha;
+    if (gh.branch) body.branch = gh.branch;
+    const res = await ghFetch('PUT', repoApi() + '/contents/' + filePath(), body);
+    if (res.status === 409 || res.status === 422) throw gerr(res.status, 'conflict');    // someone saved first (or the file appeared meanwhile)
+    if (!res.ok) throw await ghError(res);
+    return (await res.json()).content.sha;
+  }
+  // Apply a change to the latest data and save it. mutator(list) must return the new list (or throw).
+  let chain = Promise.resolve(), quietUntil = 0;
+  function commit(mutator) {
+    const run = chain.then(async () => {
+      if (!gh) throw gerr(0, 'not_connected');
+      let known = state.rev !== -1 ? { tx: state.tx, sha: state.rev } : null;
+      for (let i = 0; i < 5; i++) {
+        if (!known) { const r = await ghRead(); known = { tx: r.tx, sha: r.sha }; }
+        const next = mutator(known.tx);
+        try {
+          const sha = await ghWrite(next, known.sha);
+          etag = null; quietUntil = Date.now() + 4000;       // don't let an immediate re-read bring back an older copy
+          return { transactions: next, rev: sha };
+        } catch (e) {
+          if (e.code !== 'conflict') throw e;
+          known = null; await new Promise(r => setTimeout(r, 250 * (i + 1)));
+        }
+      }
+      throw gerr(409, 'conflict');
+    });
+    chain = run.catch(() => {});
+    return run;
+  }
+  function applyServer(j) {
+    state = { tx: j.transactions, rev: j.rev };
+    lsSet(CACHE_KEY, JSON.stringify(state));                 // last-known copy, so the app still shows data offline
+    renderAll();
+  }
+  function setOnline(v) { if (online !== v) { online = v; refreshChip(); } }
+  function errText(e) {
+    if (e.message === 'nocrypto') return t('no_crypto');
+    if (e.code === 'not_found') return t('err_gone');
+    if (e.status === 0 && e.code === 'network') return t('err_net');
+    const k = { bad_token: 'e_token', no_access: 'e_access', rate_limit: 'e_rate', repo_not_found: 'e_repo', branch_not_found: 'e_branch', bad_file: 'e_file', conflict: 'e_conflict', not_connected: 'sync_none' }[e.code];
+    return k ? t(k) : (e.message || t('err_save'));
+  }
+
+  // ---------- Live sync ----------
+  // Every device checks GitHub every few seconds (an unchanged file costs almost nothing), and right away when you return to the app.
+  let renderPending = false, refreshing = false, pollTimer = null, checkedLocal = false;
+  function renderSoon() {                                    // don't wipe a DO box someone is typing in
+    const a = document.activeElement;
+    if (a && a.matches && a.matches('[data-do]')) { renderPending = true; return; }
+    renderPending = false; renderAll();
+  }
+  document.addEventListener('focusout', e => {
+    if (renderPending && e.target.matches && e.target.matches('[data-do]')) setTimeout(() => { if (renderPending) renderSoon(); }, 0);
+  });
+  async function refresh(force) {
+    if (!gh || !session || refreshing) return;
+    if (!force && Date.now() < quietUntil) return;
+    refreshing = true;
+    try {
+      const r = await ghRead(!force && etag ? etag : null);
+      if (syncErr) { syncErr = ''; refreshChip(); }
+      if (!r.unchanged) {
+        etag = r.etag;
+        if (force || r.sha !== state.rev) {
+          state = { tx: r.tx, rev: r.sha };
+          lsSet(CACHE_KEY, JSON.stringify(state));
+          renderSoon();
+        }
+      }
+      if (!checkedLocal) { checkedLocal = true; offerLocalUpload(); }
+    } catch (e) {
+      if (e.code !== 'network') { syncErr = e.code || 'error'; refreshChip(); }   // offline just keeps showing the last data
+    } finally { refreshing = false; }
+  }
+  function startSync() {
+    stopSync(); checkedLocal = false; etag = null;
+    refresh(true);
+    pollTimer = setInterval(() => { if (!document.hidden) refresh(); }, POLL_MS);
+  }
+  function stopSync() { if (pollTimer) clearInterval(pollTimer); pollTimer = null; }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  window.addEventListener('online', () => refresh());
+  window.addEventListener('offline', () => setOnline(false));
+
+  // Entries made before the shared data existed live only in this browser: offer to upload them once.
+  function offerLocalUpload() {
+    if (state.tx.length || lsGet(MIGRATED_KEY)) return;
+    let old = [];
+    try { old = (JSON.parse(lsGet(OLD_KEY)) || {}).tx || []; } catch (e) {}
+    if (!old.length) return;
+    askConfirm(t('upload_local')(old.length), t('upload'), async () => {
+      try {
+        const rows = cleanList(old, false);
+        applyServer(await commit(list => { if (list.length) throw gerr(409, 'not_empty'); return rows; }));
+        lsSet(MIGRATED_KEY, '1'); toast(t('toast_uploaded'));
+      } catch (err) { if (err.code === 'not_empty') lsSet(MIGRATED_KEY, '1'); toast(t('err_save') + errText(err)); }
+    }, false, () => lsSet(MIGRATED_KEY, '1'));
+  }
+
+  // ---------- Connect to GitHub (once per device) ----------
+  async function loadDefaults() {                            // config.json (no secrets) can pre-fill the repository for everyone
+    try {
+      const r = await fetch('config.json', { cache: 'no-cache' });
+      if (r.ok) { const j = await r.json(); for (const k of ['repo', 'branch', 'path']) if (typeof j[k] === 'string' && j[k].trim()) ghDefaults[k] = j[k].trim(); }
+    } catch (e) {}
+    if (!ghDefaults.repo && /\.github\.io$/i.test(location.hostname)) {   // running on GitHub Pages: guess owner/repo from the web address
+      const seg = location.pathname.split('/')[1] || '';
+      ghDefaults.repo = location.hostname.split('.')[0] + '/' + (seg && !/\.\w+$/.test(seg) ? seg : location.hostname);
+    }
+  }
+  function loadGh() {
+    try { const c = JSON.parse(lsGet(GH_KEY)); if (c && c.repo && c.token) return c; } catch (e) {}
+    return null;
+  }
+  function ghMsg(msg) { const e = $('#ghErr'); e.textContent = msg || ''; e.style.display = msg ? 'block' : 'none'; }
+  function openGh(msg) {
+    const c = gh || {};
+    $('#ghRepo').value = c.repo || ghDefaults.repo || '';
+    $('#ghBranch').value = c.branch != null ? c.branch : (ghDefaults.branch || '');
+    $('#ghPath').value = c.path || ghDefaults.path || 'data.json';
+    $('#ghToken').value = '';
+    $('#ghToken').placeholder = c.token ? '••••••••  (leave empty to keep the saved token)' : 'github_pat_...';
+    $('#ghOff').style.display = gh ? '' : 'none';
+    ghMsg(msg); $('#ghModal').style.display = 'flex';
+    ($('#ghRepo').value ? $('#ghToken') : $('#ghRepo')).focus();
+  }
+  function closeGh() { $('#ghModal').style.display = 'none'; $('#ghToken').value = ''; ghMsg(''); }
+  async function saveGh() {
+    const repo = $('#ghRepo').value.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '').replace(/\/+$/, '');
+    const token = $('#ghToken').value.trim() || (gh && gh.token) || '';
+    const cfg = { repo, token, branch: $('#ghBranch').value.trim(), path: ($('#ghPath').value.trim() || 'data.json').replace(/^\/+/, '') };
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !token) return ghMsg(t('e_need'));
+    const btn = $('#ghSave'); btn.disabled = true; ghMsg('');
+    const prev = gh; gh = cfg;
+    try {
+      const rr = await ghFetch('GET', repoApi());              // is the repository reachable with this token?
+      if (!rr.ok) throw await ghError(rr);
+      const r = await ghRead();                                // can the data file be read (or does it not exist yet)?
+      lsSet(GH_KEY, JSON.stringify(cfg));
+      state = { tx: r.tx, rev: r.sha }; etag = r.etag; syncErr = '';
+      lsSet(CACHE_KEY, JSON.stringify(state));
+      closeGh(); renderAll(); refreshChip(); startSync(); toast(t('toast_connected'));
+    } catch (e) {
+      gh = prev; ghMsg(errText(e));
+    } finally { btn.disabled = false; }
+  }
+  function disconnectGh() {
+    stopSync(); gh = null; etag = null; syncErr = '';
+    lsDel(GH_KEY); lsDel(CACHE_KEY); state = { tx: [], rev: -1 };
+    closeGh(); renderAll(); refreshChip(); toast(t('toast_disconnected'));
+  }
+  $('#syncChip').addEventListener('click', () => openGh(gh && syncErr ? errText({ code: syncErr }) : ''));
+  $('#ghSave').addEventListener('click', saveGh);
+  $('#ghClose').addEventListener('click', closeGh);
+  $('#ghOff').addEventListener('click', disconnectGh);
+  $('#ghModal').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); saveGh(); } else if (e.key === 'Escape') closeGh(); });
+
+  // ---------- Sign in ----------
+  // Passwords are checked in the browser against users.json (SHA-256 of "<username lowercase>:<password>").
+  // This is a convenience gate for a static site, not real security: anyone who can open the site can read users.json.
   async function sha256(str) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
     return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
   }
   async function loadUsers() {
     const r = await fetch('users.json', { cache: 'no-cache' });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.ok) throw gerr(r.status, 'users_unreadable');
     const j = await r.json();
     return Array.isArray(j) ? j : (j.users || []);
   }
+  const userInfo = u => ({ username: u.username, name: u.name || u.username, role: u.role === 'admin' ? 'admin' : 'staff' });
+  async function verifyAdminPassword(pw) {
+    if (!session || session.role !== 'admin' || !pw) return false;
+    if (!(window.crypto && crypto.subtle)) throw new Error('nocrypto');
+    const users = await loadUsers();
+    const u = users.find(x => String(x.username).toLowerCase() === session.username.toLowerCase() && x.role === 'admin' && x.active !== false);
+    return !!u && u.passwordHash === await sha256(session.username.toLowerCase() + ':' + pw);
+  }
   function refreshChip() {
     $('#userChip').textContent = session ? `${session.name} · ${t(session.role === 'admin' ? 'role_admin' : 'role_staff')}` : '';
+    const c = $('#syncChip');
+    c.style.display = session ? '' : 'none';
+    let key = 'sync_ok', dot = '● ', bad = false;
+    if (!gh) { key = 'sync_none'; dot = '! '; bad = true; }
+    else if (syncErr) { key = 'sync_err'; dot = '! '; bad = true; }
+    else if (!online) { key = 'sync_off'; dot = '○ '; bad = true; }
+    c.textContent = dot + t(key);
+    c.className = 'text-xs px-2 py-1 rounded-full ' + (bad ? 'bg-rose-600 text-white' : 'bg-white/15 text-amber-50');
   }
   function setSession(sess) {
     session = sess;
@@ -583,80 +917,54 @@
     refreshChip();
   }
   function logout() {
-    try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
-    setSession(null);
+    stopSync();
+    lsDel(SESSION_KEY); lsDel(CACHE_KEY);                     // don't leave the data on a shared device (the GitHub connection stays)
+    state = { tx: [], rev: -1 }; etag = null; syncErr = '';
+    setSession(null); renderAll();
+    if (pendingConfirm) closeConfirm();
+    closeGh();
+  }
+  function afterSignIn() {
+    gh = loadGh();
+    refreshChip();
+    if (gh) startSync(); else openGh();
   }
   async function doLogin() {
     const err = $('#loginErr'); err.style.display = 'none';
     const showErr = k => { err.textContent = t(k); err.style.display = 'block'; };
     const u = $('#lUser').value.trim(), p = $('#lPass').value;
     if (!u || !p) return showErr('login_err');
+    $('#loginBtn').disabled = true;
     try {
       if (!(window.crypto && crypto.subtle)) throw new Error('nocrypto');
       const users = await loadUsers();
       const h = await sha256(u.toLowerCase() + ':' + p);
       const found = users.find(x => String(x.username).toLowerCase() === u.toLowerCase() && x.passwordHash === h && x.active !== false);
       if (!found) return showErr('login_err');
-      const sess = { username: found.username, name: found.name || found.username, role: found.role === 'admin' ? 'admin' : 'staff' };
-      try { localStorage.setItem(SESSION_KEY, JSON.stringify(sess)); } catch (e) {}
+      const sess = userInfo(found);
+      lsSet(SESSION_KEY, JSON.stringify(sess));
       $('#lPass').value = '';
-      setSession(sess);
+      setSession(sess); afterSignIn();
     } catch (e) {
       showErr(e.message === 'nocrypto' ? 'no_crypto' : 'login_load_err');
-    }
+    } finally { $('#loginBtn').disabled = false; }
   }
   function restoreSession() {
-    let sess = null;
-    try { sess = JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) {}
+    let sess = null; try { sess = JSON.parse(lsGet(SESSION_KEY)); } catch (e) {}
     if (!sess || !sess.username) return setSession(null);
     setSession(sess);
-    // re-check against users.json when reachable (removes deactivated users, refreshes role/name)
+    try { const c = JSON.parse(lsGet(CACHE_KEY)); if (c && Array.isArray(c.tx)) { state = { tx: c.tx, rev: -1 }; renderAll(); } } catch (e) {}
+    afterSignIn();
+    // re-check against users.json when reachable (removes deactivated users, refreshes role and name)
     loadUsers().then(users => {
       const u = users.find(x => String(x.username).toLowerCase() === String(sess.username).toLowerCase() && x.active !== false);
       if (!u) return logout();
-      const fresh = { username: u.username, name: u.name || u.username, role: u.role === 'admin' ? 'admin' : 'staff' };
-      try { localStorage.setItem(SESSION_KEY, JSON.stringify(fresh)); } catch (e) {}
-      setSession(fresh);
+      const fresh = userInfo(u); lsSet(SESSION_KEY, JSON.stringify(fresh)); setSession(fresh);
     }).catch(() => {});
   }
   $('#loginForm').addEventListener('submit', e => e.preventDefault());
   $('#loginBtn').addEventListener('click', e => { e.preventDefault(); doLogin(); });
   $('#btnLogout').addEventListener('click', logout);
-
-  // ---------- Backup / restore (data.json) ----------
-  function cleanTx(arr) {
-    if (!Array.isArray(arr)) return null;
-    const seen = new Set(), out = [];
-    for (const r of arr) {
-      if (!r || !BY_NAME[r.item] || !['purchase', 'resell'].includes(r.type)) return null;
-      const qty = +r.qty, price = +r.price;
-      if (!(qty > 0) || !(price >= 0) || !/^\d{4}-\d{2}-\d{2}$/.test(String(r.date)) || !String(r.vendor || '').trim()) return null;
-      let id = String(r.id || ''); if (!id || seen.has(id)) id = uid(); seen.add(id);
-      const o = { id, date: r.date, vendor: String(r.vendor).trim(), item: r.item, type: r.type, qty, price, status: r.status === 'paid' ? 'paid' : 'pending' };
-      if (r.type === 'resell' && r.doNo) o.doNo = String(r.doNo).trim();
-      out.push(o);
-    }
-    return out;
-  }
-  // First run only: start from data.json (if it has transactions) when nothing is saved yet
-  async function seedFromDataJson() {
-    if (hadStored) return;
-    try {
-      const r = await fetch('data.json', { cache: 'no-cache' }); if (!r.ok) return;
-      const j = await r.json(); const tx = cleanTx(Array.isArray(j) ? j : j.transactions);
-      if (tx && tx.length && !hadStored) { state = { tx }; save(); renderAll(); }
-    } catch (e) {}
-  }
-
-  // Keep the page in sync with what is saved: refresh when another tab changes data or when you come back to the app
-  function reloadSaved() {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) { state = JSON.parse(raw); renderAll(); }
-    } catch (e) {}
-  }
-  window.addEventListener('storage', e => { if (e.key === KEY) reloadSaved(); });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) reloadSaved(); });
 
   function registerSW() {
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
@@ -666,9 +974,8 @@
 
   // ---------- Init ----------
   $('#fDate').value = today();
-  try { localStorage.setItem('_t', '1'); localStorage.removeItem('_t'); } catch (e) { $('#storeWarn').classList.remove('hidden'); }
   applyLang(); setTab('overview');
-  restoreSession(); seedFromDataJson(); registerSW();
+  loadDefaults().finally(restoreSession); registerSW();
 })();
 </script>
 </body>

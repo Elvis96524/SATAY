@@ -1,8 +1,9 @@
 // Satay Supply Dashboard - service worker
 // Bump CACHE_VERSION whenever you change index.html or other cached files so installed apps update.
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'gh1';
 const CACHE = 'satay-dashboard-' + CACHE_VERSION;
-const ASSETS = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'users.json', 'data.json'];
+const ASSETS = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
+const CDN_HOSTS = ['cdn.tailwindcss.com'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -22,9 +23,10 @@ self.addEventListener('activate', event => {
 
 const cacheable = res => res && (res.ok || res.type === 'opaque');
 
+// Try the network first (skipping the browser's 10-minute page cache) and fall back to the saved copy when offline
 async function networkFirst(req) {
   try {
-    const res = await fetch(req);
+    const res = await fetch(req, { cache: 'no-cache' });
     if (cacheable(res)) { const c = await caches.open(CACHE); c.put(req, res.clone()); }
     return res;
   } catch (err) {
@@ -58,14 +60,15 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
-    // users.json / data.json and page loads: try the network first so changes show up, fall back to cache offline
-    if (req.mode === 'navigate' || /\/(users|data)\.json$/.test(url.pathname)) {
+    // pages and the small settings files must always be fresh (a changed password or user list should apply at once)
+    if (req.mode === 'navigate' || /\/(users|config|data)\.json$/.test(url.pathname)) {
       event.respondWith(networkFirst(req));
     } else {
       event.respondWith(cacheFirst(req));
     }
-  } else {
-    // Tailwind CDN etc.: serve cached copy instantly and refresh in the background (keeps the app working offline)
+  } else if (CDN_HOSTS.includes(url.hostname)) {
+    // Tailwind: serve the saved copy instantly and refresh it in the background (keeps the app working offline)
     event.respondWith(staleWhileRevalidate(req));
   }
+  // Anything else - above all api.github.com, where the shared data lives - goes straight to the network and is never cached.
 });

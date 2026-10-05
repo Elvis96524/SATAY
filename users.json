@@ -1,5 +1,5 @@
 {
-  "_readme": "passwordHash = SHA-256 hex of \"<username in lowercase>:<password>\". Replace the sample hashes below. role: admin (can delete, clear and restore data) or staff (can add and update). Set active:false to block a user. This file is public to anyone who can open the site, so it is a convenience gate, not real security.",
+  "_readme": "passwordHash = SHA-256 hex of \"<username in lowercase>:<password>\" (to make one: open the browser console on any page and run  crypto.subtle.digest('SHA-256', new TextEncoder().encode('admin:newpassword')).then(b => console.log([...new Uint8Array(b)].map(x => x.toString(16).padStart(2,'0')).join('')))  ). Replace the sample accounts before you share the app. role: admin (can delete and clear all data) or staff (can add and update entries). Set active:false to block a user. On GitHub Pages this file is public, so it keeps casual visitors out but is not strong security.",
   "users": [
     {
       "username": "admin",
