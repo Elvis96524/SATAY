@@ -14,19 +14,6 @@
       "role": "staff",
       "active": true,
       "passwordHash": "d15127858f71b6c259d34c4779c097f17f59c81ff986f67cc88aa6bb3ad72a0f"
-    },
-    {
-      "username": "AhBoy",
-      "name": "suhardi",
-      "role": "staff",
-      "active": true,
-      "iter": 600000,
-      "salt": "iCnSbJL0wuBZmreGZuYEhA==",
-      "verifier": "7J9UCOuyUrKqQzA1KPuUXBL/fabUDAwPt0gKeMuG9ro=",
-      "vault": {
-        "iv": "2KlEtse8S+IWDrER",
-        "ct": "4v8v6DkRbNrsWNRwc6a6/9ZIKM9zj8rYUvCrZYuMWRCIJo5ARyk48MFCYWcN6lJRrpziMYfDvDPjNzW/SrS2Zqgvukik/moMxzfeBcylZyCmlEjahbRyWXiH8v5tnyDKJ8WR15aDr4fuJBjR7xm54U2xEabamOvHMs1KptmrLn2/SI2upbZXp5XiZiKe/T5Q4/mNu90E6zUDMthuOR8QJxqN0M/B/Yuh27VByLoIYWg90Q=="
-      }
     }
   ],
   "version": 2
