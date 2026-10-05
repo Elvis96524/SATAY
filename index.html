@@ -60,6 +60,7 @@
       <button type="button" id="btnInstall" class="px-3 py-1.5 rounded-lg bg-white text-amber-700 font-medium" style="display:none" data-i18n="install">Install app</button>
       <button type="button" id="syncChip" class="text-xs px-2 py-1 rounded-full bg-white/15" style="display:none"></button>
       <span id="userChip" class="text-amber-100 hidden sm:inline"></span>
+      <button type="button" id="btnUsers" class="admin-only px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="users">Users</button>
       <button id="btnExport" class="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="export">Export CSV</button>
       <button id="btnReset" class="admin-only px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="clear">Clear all data</button>
       <button id="btnLogout" class="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="logout">Sign out</button>
@@ -154,6 +155,50 @@
 
 </main>
 
+<div id="usersModal" style="display:none" class="fixed inset-0 z-50 items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-2xl shadow-xl p-5 w-full max-w-2xl max-h-full overflow-y-auto" role="dialog" aria-modal="true">
+    <div class="flex items-start justify-between gap-3">
+      <h2 class="font-semibold text-lg" data-i18n="um_title">Manage users</h2>
+      <button type="button" id="umClose" class="text-stone-400 hover:text-stone-700 text-xl leading-none px-1" aria-label="Close">&#10005;</button>
+    </div>
+    <div id="umLock" class="mt-4 space-y-3 text-sm">
+      <p class="text-stone-600" data-i18n="um_lock_help">Enter your admin password to manage accounts.</p>
+      <input id="umAdminPw" type="password" autocomplete="current-password" class="w-full rounded-lg border border-stone-300 px-3 py-2">
+      <p id="umLockErr" style="display:none" class="text-rose-600 text-xs"></p>
+      <button type="button" id="umUnlock" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium disabled:opacity-50" data-i18n="um_unlock">Unlock</button>
+    </div>
+    <div id="umPanel" style="display:none" class="mt-4 space-y-5 text-sm">
+      <div id="umList" class="divide-y divide-stone-100 border border-stone-200 rounded-xl"></div>
+      <div class="rounded-xl bg-stone-50 border border-stone-200 p-4 space-y-3">
+        <h3 class="font-medium" data-i18n="um_add">Add a user</h3>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <label class="block"><span class="text-stone-500" data-i18n="um_name">Full name</span>
+            <input id="umName" autocomplete="off" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></label>
+          <label class="block"><span class="text-stone-500" data-i18n="um_user">ID (username)</span>
+            <input id="umUser" autocomplete="off" autocapitalize="none" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"></label>
+          <label class="block"><span class="text-stone-500" data-i18n="um_role">Role</span>
+            <select id="umRole" class="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2">
+              <option value="staff" data-i18n="um_role_staff">Staff - can add and edit entries</option>
+              <option value="admin" data-i18n="um_role_admin">Admin - also delete entries and manage users</option>
+            </select></label>
+          <label class="block"><span class="text-stone-500" data-i18n="um_pw">Password</span>
+            <div class="mt-1 flex gap-2">
+              <input id="umPw" type="text" autocomplete="off" autocapitalize="none" class="min-w-0 flex-1 rounded-lg border border-stone-300 px-3 py-2">
+              <button type="button" id="umGen" class="px-3 py-2 rounded-lg bg-white border border-stone-300 hover:bg-stone-100" data-i18n="um_gen">Generate</button>
+            </div></label>
+        </div>
+        <label class="flex items-start gap-2 text-xs text-stone-600"><input type="checkbox" id="umAuto" checked class="mt-0.5"><span data-i18n="um_auto"></span></label>
+        <p id="umMsg" style="display:none" class="text-xs"></p>
+        <div id="umCredBox" style="display:none" class="rounded-lg bg-emerald-50 border border-emerald-200 p-3 space-y-2">
+          <pre id="umCred" class="whitespace-pre-wrap break-all font-mono text-xs"></pre>
+          <button type="button" id="umCopy" class="px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 text-xs font-medium" data-i18n="um_copy">Copy sign-in details</button>
+        </div>
+        <div class="flex justify-end"><button type="button" id="umAddBtn" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium" data-i18n="um_add_btn">Add user</button></div>
+      </div>
+      <p class="text-xs text-stone-400" data-i18n="um_note"></p>
+    </div>
+  </div>
+</div>
 <div id="modal" style="display:none" class="fixed inset-0 z-50 items-center justify-center bg-black/40 p-4">
   <div class="bg-white rounded-2xl shadow-xl p-5 w-full max-w-sm" role="dialog" aria-modal="true">
     <p id="modalMsg" class="text-sm text-stone-700"></p>
@@ -221,6 +266,21 @@
       pay_status: 'Payment status', opt_pending: 'Pending', opt_settled: 'Already settled',
       do_no: 'DO number', do_ph: 'e.g. DO-0001', c_do: 'DO No.',
       sync_ok: 'Synced', sync_off: 'Offline - showing last saved data',
+      users: 'Users', um_title: 'Manage users', um_lock_help: 'Enter your admin password to manage accounts.', um_unlock: 'Unlock',
+      um_add: 'Add a user', um_name: 'Full name', um_user: 'ID (username)', um_role: 'Role', um_pw: 'Password', um_gen: 'Generate', um_add_btn: 'Add user',
+      um_role_staff: 'Staff - can add and edit entries', um_role_admin: 'Admin - also delete entries and manage users',
+      um_auto: 'Connect this person to GitHub automatically when they sign in (the access is saved in users.json, locked with their password). Untick it if they should paste the token themselves.',
+      um_reset: 'Reset password', um_disable: 'Disable', um_enable: 'Enable', um_save: 'Save', um_you: '(you)', um_off: 'Disabled',
+      um_old: 'old password format: reset the password to upgrade', um_auto_yes: 'connects automatically', um_auto_no: 'needs the access token on first use',
+      um_saving: 'Saving...', um_created: 'Account saved. Sign-in works in about a minute, once GitHub has published the change. Send these details to the person:',
+      um_pw_changed: 'Password changed. Sign-in with it works in about a minute. Send the new details to the person:',
+      um_copy: 'Copy sign-in details', um_copied: 'Copied', um_share_text: (url, id, pw) => `Satay app: ${url}\nID: ${id}\nPassword: ${pw}`,
+      um_need_gh: 'Connect this device to GitHub first (tap the sync status at the top), then open Users again.',
+      um_e_user: 'The ID must be 3-32 letters, numbers, dots, dashes or underscores.', um_e_name: 'Enter the full name.',
+      um_e_pw: 'The password needs at least 10 characters, with letters and numbers.', um_e_exists: 'That ID is already used.',
+      um_e_file: 'users.json is missing or damaged, so nothing was changed. Check the file on GitHub.', um_e_gone: 'That user no longer exists.',
+      um_confirm_del: n => `Delete the account for ${n}?`,
+      um_note: 'Removing someone does not erase what their phone already holds. To cut off access completely: create a new GitHub token, connect this device with it, then reset every other person\'s password.',
       install: 'Install app', install_phone: 'Install on this phone', inst_title: 'Install the app',
       inst_ios: 'iPhone / iPad: open this page in Safari, tap the Share button (square with an arrow), choose "Add to Home Screen", then tap "Add".',
       inst_android: 'Android: open this page in Chrome, tap the ⋮ menu at the top right, then choose "Install app" (or "Add to Home screen").',
@@ -271,6 +331,21 @@
       pay_status: 'Status pembayaran', opt_pending: 'Belum selesai', opt_settled: 'Sudah selesai',
       do_no: 'Nombor DO', do_ph: 'cth. DO-0001', c_do: 'No. DO',
       sync_ok: 'Disegerakkan', sync_off: 'Luar talian - memaparkan data tersimpan terakhir',
+      users: 'Pengguna', um_title: 'Urus pengguna', um_lock_help: 'Masukkan kata laluan admin untuk mengurus akaun.', um_unlock: 'Buka',
+      um_add: 'Tambah pengguna', um_name: 'Nama penuh', um_user: 'ID (nama pengguna)', um_role: 'Peranan', um_pw: 'Kata laluan', um_gen: 'Jana', um_add_btn: 'Tambah pengguna',
+      um_role_staff: 'Kakitangan - boleh tambah dan edit entri', um_role_admin: 'Admin - juga boleh padam entri dan urus pengguna',
+      um_auto: 'Sambungkan orang ini ke GitHub secara automatik apabila log masuk (akses disimpan dalam users.json, dikunci dengan kata laluan mereka). Nyahtanda jika mereka perlu tampal token sendiri.',
+      um_reset: 'Tetap semula kata laluan', um_disable: 'Lumpuhkan', um_enable: 'Aktifkan', um_save: 'Simpan', um_you: '(anda)', um_off: 'Dilumpuhkan',
+      um_old: 'format kata laluan lama: tetapkan semula untuk naik taraf', um_auto_yes: 'bersambung secara automatik', um_auto_no: 'perlu token akses pada penggunaan pertama',
+      um_saving: 'Menyimpan...', um_created: 'Akaun disimpan. Log masuk berfungsi dalam kira-kira satu minit, selepas GitHub menerbitkan perubahan. Hantar butiran ini kepada orang itu:',
+      um_pw_changed: 'Kata laluan ditukar. Log masuk dengannya berfungsi dalam kira-kira satu minit. Hantar butiran baharu kepada orang itu:',
+      um_copy: 'Salin butiran log masuk', um_copied: 'Disalin', um_share_text: (url, id, pw) => `Aplikasi Satay: ${url}\nID: ${id}\nKata laluan: ${pw}`,
+      um_need_gh: 'Sambungkan peranti ini ke GitHub dahulu (ketik status segerak di atas), kemudian buka Pengguna semula.',
+      um_e_user: 'ID mestilah 3-32 huruf, nombor, titik, sempang atau garis bawah.', um_e_name: 'Masukkan nama penuh.',
+      um_e_pw: 'Kata laluan memerlukan sekurang-kurangnya 10 aksara, dengan huruf dan nombor.', um_e_exists: 'ID itu sudah digunakan.',
+      um_e_file: 'users.json hilang atau rosak, jadi tiada apa yang diubah. Semak fail di GitHub.', um_e_gone: 'Pengguna itu sudah tiada.',
+      um_confirm_del: n => `Padam akaun ${n}?`,
+      um_note: 'Mengeluarkan seseorang tidak memadam apa yang telefon mereka sudah ada. Untuk menutup akses sepenuhnya: buat token GitHub baharu, sambungkan peranti ini dengannya, kemudian tetapkan semula kata laluan setiap orang lain.',
       install: 'Pasang aplikasi', install_phone: 'Pasang pada telefon ini', inst_title: 'Pasang aplikasi',
       inst_ios: 'iPhone / iPad: buka halaman ini dalam Safari, ketik butang Kongsi (petak dengan anak panah), pilih "Add to Home Screen", kemudian ketik "Add".',
       inst_android: 'Android: buka halaman ini dalam Chrome, ketik menu ⋮ di penjuru kanan atas, kemudian pilih "Install app" (atau "Add to Home screen").',
@@ -504,6 +579,7 @@
     });
     refreshChip();
     syncForm(); renderAll();
+    if (um.unlocked) umRender();
   }
 
   // ---------- In-page confirm dialog (native confirm() is blocked in some embedded views) ----------
@@ -783,8 +859,94 @@
     if (e.message === 'nocrypto') return t('no_crypto');
     if (e.code === 'not_found') return t('err_gone');
     if (e.status === 0 && e.code === 'network') return t('err_net');
-    const k = { bad_token: 'e_token', no_access: 'e_access', rate_limit: 'e_rate', repo_not_found: 'e_repo', branch_not_found: 'e_branch', bad_file: 'e_file', conflict: 'e_conflict', not_connected: 'sync_none' }[e.code];
+    const k = { bad_token: 'e_token', no_access: 'e_access', rate_limit: 'e_rate', repo_not_found: 'e_repo', branch_not_found: 'e_branch', bad_file: 'e_file', conflict: 'e_conflict', not_connected: 'sync_none',
+      v_name: 'um_e_name', v_user: 'um_e_user', v_pw: 'um_e_pw', user_exists: 'um_e_exists', bad_users: 'um_e_file', no_user: 'um_e_gone' }[e.code];
     return k ? t(k) : (e.message || t('err_save'));
+  }
+
+
+  // ---------- Accounts: passwords, locked GitHub access, users.json ----------
+  // A new account stores PBKDF2(password) as a check value, plus the GitHub access encrypted with a key from the same password
+  // (AES-GCM). Signing in unlocks it, so the person never has to paste a token. Old accounts (plain SHA-256 hash) still sign in.
+  const USERS_PATH = 'users.json', PW_ITER = 600000;
+  const lowerEq = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
+  const validUsername = u => /^[A-Za-z0-9._-]{3,32}$/.test(String(u));
+  const pwProblem = pw => (String(pw).length < 10 || !/[A-Za-z]/.test(pw) || !/\d/.test(pw)) ? 'v_pw' : '';
+  function genPassword() {
+    const A = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789', lim = 256 - (256 % A.length);
+    let out;
+    do {
+      out = '';
+      while (out.length < 12) for (const x of crypto.getRandomValues(new Uint8Array(24))) if (x < lim && out.length < 12) out += A[x % A.length];
+    } while (pwProblem(out));
+    return out;
+  }
+  const bytesToB64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+  const b64ToBytes = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  async function deriveFromPassword(pw, saltB64, iter) {      // 64 bytes: first half = check value, second half = AES key
+    const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+    const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: b64ToBytes(saltB64), iterations: iter }, km, 512));
+    return { verifier: bytesToB64(bits.slice(0, 32)), key: await crypto.subtle.importKey('raw', bits.slice(32), 'AES-GCM', false, ['encrypt', 'decrypt']) };
+  }
+  async function seal(key, obj) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj))));
+    return { iv: bytesToB64(iv), ct: bytesToB64(ct) };
+  }
+  async function unseal(key, v) {
+    return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(v.iv) }, key, b64ToBytes(v.ct))));
+  }
+  async function makeCredential(pw, cfg) {                   // cfg = GitHub access to lock inside the account, or null
+    const salt = bytesToB64(crypto.getRandomValues(new Uint8Array(16)));
+    const { verifier, key } = await deriveFromPassword(pw, salt, PW_ITER);
+    const rec = { iter: PW_ITER, salt, verifier };
+    if (cfg) rec.vault = await seal(key, cfg);
+    return rec;
+  }
+  async function checkPassword(user, pw) {                    // -> { ok, key? }   key opens user.vault
+    if (user.verifier && user.salt) {
+      const d = await deriveFromPassword(pw, user.salt, user.iter || PW_ITER);
+      return d.verifier === user.verifier ? { ok: true, key: d.key } : { ok: false };
+    }
+    if (user.passwordHash) return { ok: user.passwordHash === await sha256(String(user.username).toLowerCase() + ':' + pw) };
+    return { ok: false };
+  }
+
+  const encPath = p => p.replace(/^\/+/, '').split('/').map(encodeURIComponent).join('/');
+  async function ghGetFile(path) {                            // fresh copy straight from GitHub: { text, sha } or null
+    const url = repoApi() + '/contents/' + encPath(path) + (gh.branch ? '?ref=' + encodeURIComponent(gh.branch) : '');
+    const res = await ghFetch('GET', url);
+    if (res.status === 404) { const e = await ghError(res); if (e.code === 'branch_not_found') throw e; return null; }
+    if (!res.ok) throw await ghError(res);
+    const j = await res.json();
+    if (Array.isArray(j) || j.type === 'dir') throw gerr(0, 'bad_users', 'folder');
+    if (j.encoding === 'base64' && j.content != null && j.content !== '') return { text: fromB64(j.content), sha: j.sha };
+    const r2 = await ghFetch('GET', url, undefined, { Accept: 'application/vnd.github.raw+json' });
+    if (!r2.ok) throw await ghError(r2);
+    return { text: await r2.text(), sha: j.sha };
+  }
+  async function ghPutFile(path, text, sha, message) {
+    const body = { message, content: toB64(text) };
+    if (sha) body.sha = sha;
+    if (gh.branch) body.branch = gh.branch;
+    const res = await ghFetch('PUT', repoApi() + '/contents/' + encPath(path), body);
+    if (res.status === 409 || res.status === 422) throw gerr(res.status, 'conflict');
+    if (!res.ok) throw await ghError(res);
+  }
+  // Read the latest users.json, let mutate(doc) change it, save it. Retries if someone saved at the same moment.
+  // A missing or damaged file is never overwritten (that would lock everyone out).
+  async function updateUsersFile(mutate) {
+    for (let i = 0; i < 5; i++) {
+      const cur = await ghGetFile(USERS_PATH);
+      let doc = null; try { doc = cur ? JSON.parse(cur.text) : null; } catch (e) {}
+      if (Array.isArray(doc)) doc = { users: doc };
+      if (!doc || typeof doc !== 'object' || !Array.isArray(doc.users)) throw gerr(0, 'bad_users', 'users.json is missing or damaged');
+      const next = await mutate(JSON.parse(JSON.stringify(doc)));
+      next.version = 2;
+      try { await ghPutFile(USERS_PATH, JSON.stringify(next, null, 2) + '\n', cur.sha, 'Update users (' + (session ? session.username : 'app') + ')'); return next; }
+      catch (e) { if (e.code !== 'conflict') throw e; await new Promise(r => setTimeout(r, 250 * (i + 1))); }
+    }
+    throw gerr(409, 'conflict');
   }
 
   // ---------- Live sync ----------
@@ -920,7 +1082,7 @@
     if (!(window.crypto && crypto.subtle)) throw new Error('nocrypto');
     const users = await loadUsers();
     const u = users.find(x => String(x.username).toLowerCase() === session.username.toLowerCase() && x.role === 'admin' && x.active !== false);
-    return !!u && u.passwordHash === await sha256(session.username.toLowerCase() + ':' + pw);
+    return !!u && (await checkPassword(u, pw)).ok;
   }
   function refreshChip() {
     $('#userChip').textContent = session ? `${session.name} · ${t(session.role === 'admin' ? 'role_admin' : 'role_staff')}` : '';
@@ -945,7 +1107,7 @@
     state = { tx: [], rev: -1 }; etag = null; syncErr = '';
     setSession(null); renderAll();
     if (pendingConfirm) closeConfirm();
-    closeGh();
+    closeGh(); closeUsers();
   }
   function afterSignIn() {
     gh = loadGh();
@@ -961,9 +1123,12 @@
     try {
       if (!(window.crypto && crypto.subtle)) throw new Error('nocrypto');
       const users = await loadUsers();
-      const h = await sha256(u.toLowerCase() + ':' + p);
-      const found = users.find(x => String(x.username).toLowerCase() === u.toLowerCase() && x.passwordHash === h && x.active !== false);
-      if (!found) return showErr('login_err');
+      const found = users.find(x => String(x.username).toLowerCase() === u.toLowerCase() && x.active !== false);
+      const chk = found ? await checkPassword(found, p) : { ok: false };
+      if (!chk.ok) return showErr('login_err');
+      if (chk.key && found.vault) {                          // the account carries the GitHub access, locked with this password
+        try { const cfg = await unseal(chk.key, found.vault); if (cfg && cfg.repo && cfg.token) lsSet(GH_KEY, JSON.stringify(cfg)); } catch (e) {}
+      }
       const sess = userInfo(found);
       lsSet(SESSION_KEY, JSON.stringify(sess));
       $('#lPass').value = '';
@@ -988,6 +1153,166 @@
   $('#loginForm').addEventListener('submit', e => e.preventDefault());
   $('#loginBtn').addEventListener('click', e => { e.preventDefault(); doLogin(); });
   $('#btnLogout').addEventListener('click', logout);
+
+  // ---------- Manage users (admin only) ----------
+  // Changes are saved to users.json in the connected repository. The admin password is asked again before the screen opens.
+  const um = { unlocked: false, users: [], resetFor: null, busy: false };
+  function umMsg(text, kind) {
+    const e = $('#umMsg'); e.textContent = text || ''; e.style.display = text ? 'block' : 'none';
+    e.className = 'text-xs ' + (kind === 'ok' ? 'text-emerald-700' : 'text-rose-600');
+    $('#umCredBox').style.display = 'none';
+  }
+  function umDone(msgKey, username, pw) {
+    umMsg(t(msgKey), 'ok');
+    $('#umCred').textContent = t('um_share_text')(location.origin + location.pathname.replace(/index\.html$/, ''), username, pw);
+    $('#umCredBox').style.display = 'block';
+  }
+  function umRender() {
+    const me = session ? session.username : '';
+    $('#umList').innerHTML = um.users.map(u => {
+      const self = lowerEq(u.username, me), legacy = !u.verifier && !!u.passwordHash, off = u.active === false, id = esc(u.username);
+      const editing = um.resetFor && lowerEq(um.resetFor, u.username);
+      return `<div class="p-3 space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div class="font-medium">${esc(u.name || u.username)}${self ? ` <span class="text-stone-400 font-normal">${esc(t('um_you'))}</span>` : ''}
+              <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-violet-100 text-violet-700' : 'bg-sky-100 text-sky-700'}">${esc(t(u.role === 'admin' ? 'role_admin' : 'role_staff'))}</span>${off ? ` <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700">${esc(t('um_off'))}</span>` : ''}</div>
+            <div class="text-xs text-stone-500">${id} &middot; ${esc(u.vault ? t('um_auto_yes') : t('um_auto_no'))}${legacy ? ` &middot; <span class="text-amber-700">${esc(t('um_old'))}</span>` : ''}</div>
+          </div>
+          <div class="flex flex-wrap gap-1 text-xs">
+            <button type="button" data-um="reset" data-u="${id}" class="px-2 py-1 rounded-md bg-stone-100 hover:bg-stone-200">${esc(t('um_reset'))}</button>
+            ${self ? '' : `<button type="button" data-um="toggle" data-u="${id}" class="px-2 py-1 rounded-md bg-stone-100 hover:bg-stone-200">${esc(t(off ? 'um_enable' : 'um_disable'))}</button>
+            <button type="button" data-um="del" data-u="${id}" class="px-2 py-1 rounded-md text-rose-600 hover:bg-rose-50">${esc(t('del'))}</button>`}
+          </div>
+        </div>
+        ${editing ? `<div class="flex flex-wrap gap-2 text-xs">
+          <input data-um-newpw type="text" autocomplete="off" autocapitalize="none" placeholder="${esc(t('um_pw'))}" class="min-w-0 flex-1 rounded-lg border border-stone-300 px-3 py-1.5">
+          <button type="button" data-um="gen-reset" class="px-3 py-1.5 rounded-lg bg-white border border-stone-300 hover:bg-stone-100">${esc(t('um_gen'))}</button>
+          <button type="button" data-um="save-reset" data-u="${id}" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white">${esc(t('um_save'))}</button>
+          <button type="button" data-um="cancel-reset" class="px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200">${esc(t('cancel'))}</button></div>` : ''}
+      </div>`;
+    }).join('') || '<p class="p-3 text-stone-400">-</p>';
+  }
+  async function umLoad() {
+    const cur = await ghGetFile(USERS_PATH);
+    let doc = null; try { doc = cur ? JSON.parse(cur.text) : null; } catch (e) {}
+    if (Array.isArray(doc)) doc = { users: doc };
+    if (!doc || !Array.isArray(doc.users)) throw gerr(0, 'bad_users', 'users.json');
+    um.users = doc.users; umRender();
+  }
+  async function umRun(fn) {                                 // one change at a time
+    if (um.busy) return;
+    um.busy = true; umMsg(t('um_saving'), 'ok');
+    try { await fn(); } catch (e) { umMsg(errText(e), 'err'); }
+    finally { um.busy = false; }
+  }
+  const umCfg = () => $('#umAuto').checked && gh ? { repo: gh.repo, branch: gh.branch || '', path: gh.path || 'data.json', token: gh.token } : null;
+  const umUser = name => um.users.find(x => lowerEq(x.username, name));
+  const umIsSelf = name => session && lowerEq(name, session.username);
+
+  function umAdd() {
+    return umRun(async () => {
+      const name = $('#umName').value.trim(), username = $('#umUser').value.trim(), pw = $('#umPw').value;
+      const role = $('#umRole').value === 'admin' ? 'admin' : 'staff';
+      if (!name) throw gerr(0, 'v_name');
+      if (!validUsername(username)) throw gerr(0, 'v_user');
+      if (pwProblem(pw)) throw gerr(0, 'v_pw');
+      if (umUser(username)) throw gerr(409, 'user_exists');
+      const cred = await makeCredential(pw, umCfg());
+      const next = await updateUsersFile(doc => {
+        if (doc.users.some(x => lowerEq(x.username, username))) throw gerr(409, 'user_exists');
+        doc.users.push({ username, name, role, active: true, ...cred });
+        return doc;
+      });
+      um.users = next.users; umRender();
+      $('#umName').value = ''; $('#umUser').value = ''; $('#umPw').value = '';
+      umDone('um_created', username, pw);
+    });
+  }
+  function umSaveReset(username) {
+    return umRun(async () => {
+      const box = $('#umList [data-um-newpw]'), pw = box ? box.value : '';
+      if (pwProblem(pw)) throw gerr(0, 'v_pw');
+      const cred = await makeCredential(pw, umCfg());
+      const next = await updateUsersFile(doc => {
+        const u = doc.users.find(x => lowerEq(x.username, username));
+        if (!u) throw gerr(404, 'no_user');
+        delete u.passwordHash; delete u.vault; Object.assign(u, cred);
+        return doc;
+      });
+      um.users = next.users; um.resetFor = null; umRender();
+      umDone('um_pw_changed', username, pw);
+    });
+  }
+  function umToggle(username) {
+    if (umIsSelf(username)) return;
+    return umRun(async () => {
+      const next = await updateUsersFile(doc => {
+        const u = doc.users.find(x => lowerEq(x.username, username));
+        if (!u) throw gerr(404, 'no_user');
+        u.active = u.active === false;
+        return doc;
+      });
+      um.users = next.users; umRender(); umMsg('');
+    });
+  }
+  function umDelete(username) {
+    if (umIsSelf(username)) return;
+    const u = umUser(username); if (!u) return;
+    askConfirm(t('um_confirm_del')(u.name || u.username), t('del'), () => umRun(async () => {
+      const next = await updateUsersFile(doc => {
+        if (!doc.users.some(x => lowerEq(x.username, username))) throw gerr(404, 'no_user');
+        doc.users = doc.users.filter(x => !lowerEq(x.username, username));
+        return doc;
+      });
+      um.users = next.users; umRender(); umMsg('');
+    }));
+  }
+  async function umUnlock() {
+    const err = $('#umLockErr'), btn = $('#umUnlock'); err.style.display = 'none'; btn.disabled = true;
+    try {
+      if (!(await verifyAdminPassword($('#umAdminPw').value))) { err.textContent = t('admin_pw_wrong'); err.style.display = 'block'; return; }
+      await umLoad();
+      um.unlocked = true; $('#umAdminPw').value = '';
+      $('#umLock').style.display = 'none'; $('#umPanel').style.display = 'block';
+    } catch (e) { err.textContent = errText(e); err.style.display = 'block'; }
+    finally { btn.disabled = !gh; }
+  }
+  function openUsers() {
+    if (!session || session.role !== 'admin') return;
+    um.unlocked = false; um.resetFor = null;
+    $('#umPanel').style.display = 'none'; $('#umLock').style.display = 'block';
+    $('#umAdminPw').value = ''; umMsg('');
+    const err = $('#umLockErr'); err.style.display = gh ? 'none' : 'block'; err.textContent = gh ? '' : t('um_need_gh');
+    $('#umUnlock').disabled = !gh;
+    $('#usersModal').style.display = 'flex'; $('#umAdminPw').focus();
+  }
+  function closeUsers() {
+    $('#usersModal').style.display = 'none';
+    um.unlocked = false; um.users = []; um.resetFor = null;
+    $('#umAdminPw').value = ''; $('#umPw').value = ''; $('#umList').innerHTML = ''; $('#umCred').textContent = ''; $('#umCredBox').style.display = 'none';
+  }
+  $('#btnUsers').addEventListener('click', openUsers);
+  $('#umClose').addEventListener('click', closeUsers);
+  $('#umUnlock').addEventListener('click', umUnlock);
+  $('#umAdminPw').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); umUnlock(); } });
+  $('#umGen').addEventListener('click', () => { $('#umPw').value = genPassword(); });
+  $('#umAddBtn').addEventListener('click', umAdd);
+  $('#umCopy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('#umCred').textContent); toast(t('um_copied')); }
+    catch (e) { const r = document.createRange(); r.selectNodeContents($('#umCred')); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+  });
+  $('#umList').addEventListener('click', e => {
+    const b = e.target.closest('[data-um]'); if (!b) return;
+    const u = b.dataset.u, a = b.dataset.um;
+    if (a === 'reset') { um.resetFor = u; umRender(); const i = $('#umList [data-um-newpw]'); if (i) i.focus(); }
+    else if (a === 'cancel-reset') { um.resetFor = null; umRender(); }
+    else if (a === 'gen-reset') { const i = $('#umList [data-um-newpw]'); if (i) i.value = genPassword(); }
+    else if (a === 'save-reset') umSaveReset(u);
+    else if (a === 'toggle') umToggle(u);
+    else if (a === 'del') umDelete(u);
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#usersModal').style.display === 'flex' && !pendingConfirm) closeUsers(); });
 
   // ---------- Install app ----------
   // Android / desktop Chrome can install straight from the button; iPhone Safari (and chat-app browsers) need the steps shown in the dialog.

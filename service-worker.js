@@ -1,6 +1,6 @@
 // Satay Supply Dashboard - service worker
 // Bump CACHE_VERSION whenever you change index.html or other cached files so installed apps update.
-const CACHE_VERSION = 'gh2';
+const CACHE_VERSION = 'gh3';
 const CACHE = 'satay-dashboard-' + CACHE_VERSION;
 const ASSETS = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 const CDN_HOSTS = ['cdn.tailwindcss.com'];
