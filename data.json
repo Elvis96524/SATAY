@@ -1,6 +1,57 @@
 {
   "app": "satay-dashboard",
   "version": 2,
-  "updatedAt": "2026-10-05T00:00:00.000Z",
-  "transactions": []
+  "updatedAt": "2026-10-05T06:47:23.790Z",
+  "transactions": [
+    {
+      "id": "0muuw0nm6ejbqgc",
+      "date": "2026-10-03",
+      "vendor": "FSE",
+      "item": "Beef Topside",
+      "type": "purchase",
+      "qty": 20,
+      "price": 24,
+      "status": "pending"
+    },
+    {
+      "id": "0muuw0nm6mod1l4",
+      "date": "2026-10-03",
+      "vendor": "FSE",
+      "item": "Chicken Chop",
+      "type": "purchase",
+      "qty": 24,
+      "price": 12.5,
+      "status": "pending"
+    },
+    {
+      "id": "0muuw0nm6i9req3",
+      "date": "2026-10-03",
+      "vendor": "FSE",
+      "item": "Satay Ayam",
+      "type": "resell",
+      "qty": 1400,
+      "price": 0.6,
+      "status": "pending"
+    },
+    {
+      "id": "0muuw0nm62p3lkn",
+      "date": "2026-10-05",
+      "vendor": "FSE",
+      "item": "Satay Ayam",
+      "type": "resell",
+      "qty": 1450,
+      "price": 0.6,
+      "status": "pending"
+    },
+    {
+      "id": "0muuw0nm69nr0a7",
+      "date": "2026-10-05",
+      "vendor": "FSE",
+      "item": "Satay Daging",
+      "type": "resell",
+      "qty": 1400,
+      "price": 0.6,
+      "status": "pending"
+    }
+  ]
 }
