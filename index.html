@@ -42,6 +42,7 @@
       <p id="loginErr" style="display:none" class="text-rose-600 text-xs"></p>
       <button id="loginBtn" class="w-full px-4 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium" data-i18n="sign_in">Sign in</button>
     </form>
+    <button type="button" id="loginInstall" style="display:none" class="mt-3 w-full px-4 py-2 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm font-medium" data-i18n="install_phone">Install on this phone</button>
   </div>
 </div>
 
@@ -56,6 +57,7 @@
         <button data-lang="en" class="px-3 py-1 rounded-md font-medium">EN</button>
         <button data-lang="ms" class="px-3 py-1 rounded-md font-medium">BM</button>
       </div>
+      <button type="button" id="btnInstall" class="px-3 py-1.5 rounded-lg bg-white text-amber-700 font-medium" style="display:none" data-i18n="install">Install app</button>
       <button type="button" id="syncChip" class="text-xs px-2 py-1 rounded-full bg-white/15" style="display:none"></button>
       <span id="userChip" class="text-amber-100 hidden sm:inline"></span>
       <button id="btnExport" class="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25" data-i18n="export">Export CSV</button>
@@ -192,6 +194,15 @@
     </div>
   </div>
 </div>
+<div id="installModal" style="display:none" class="fixed inset-0 z-50 items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-2xl shadow-xl p-5 w-full max-w-md max-h-full overflow-y-auto" role="dialog" aria-modal="true">
+    <h2 class="font-semibold text-lg" data-i18n="inst_title">Install the app</h2>
+    <div id="installBody" class="mt-3 space-y-3 text-sm text-stone-700"></div>
+    <div class="mt-5 flex justify-end text-sm">
+      <button type="button" id="installClose" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium" data-i18n="close">Close</button>
+    </div>
+  </div>
+</div>
 <div id="toast" class="toast fixed bottom-5 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-sm px-4 py-2 rounded-lg opacity-0 pointer-events-none"></div>
 
 <script>
@@ -210,6 +221,12 @@
       pay_status: 'Payment status', opt_pending: 'Pending', opt_settled: 'Already settled',
       do_no: 'DO number', do_ph: 'e.g. DO-0001', c_do: 'DO No.',
       sync_ok: 'Synced', sync_off: 'Offline - showing last saved data',
+      install: 'Install app', install_phone: 'Install on this phone', inst_title: 'Install the app',
+      inst_ios: 'iPhone / iPad: open this page in Safari, tap the Share button (square with an arrow), choose "Add to Home Screen", then tap "Add".',
+      inst_android: 'Android: open this page in Chrome, tap the ⋮ menu at the top right, then choose "Install app" (or "Add to Home screen").',
+      inst_desktop: 'Computer: in Chrome or Edge, click the install icon at the right end of the address bar.',
+      inst_inapp: 'Opened this link from WhatsApp, Telegram, Facebook or another app? Installing does not work there. Tap ⋮ (or the compass / share icon) and choose "Open in Chrome" (Android) or "Open in Safari" (iPhone), then follow the steps above.',
+      inst_after: 'After installing, open the app from your home screen, sign in, and connect to GitHub once on that phone.',
       gh_title: 'Connect to GitHub', gh_help: 'Entries are saved to data.json in a GitHub repository, so every device shows the same data. Each device needs the access token once.', gh_repo: 'Data repository (owner/name)', gh_branch: 'Branch (optional)', gh_path: 'File', gh_token: 'Access token', gh_token_note: 'Use a fine-grained token limited to this one repository with Contents: Read and write. It stays in this browser only.', gh_save: 'Save & connect', gh_disconnect: 'Disconnect', close: 'Close', sync_none: 'Not connected - tap to set up', sync_err: 'Sync problem - tap to fix', toast_connected: 'Connected to GitHub', toast_disconnected: 'Disconnected', e_need: 'Enter the repository (owner/name) and the access token.', e_token: 'GitHub rejected the token. Check it is correct and has not expired.', e_access: 'The token cannot use this repository. It needs Contents: Read and write for it.', e_rate: 'GitHub is limiting requests right now. Try again in a minute.', e_repo: 'Repository not found, or the token cannot see it.', e_branch: 'Branch not found in the repository.', e_file: 'data.json has an invalid entry, so the app will not overwrite it. Fix the file on GitHub.', e_conflict: 'Several people saved at once. Please try again.', login_load_err: 'Cannot load users.json. Open this app from its web address (http/https), not from a file.', no_crypto: 'Sign-in needs a secure page (https or localhost).', err_net: 'Cannot reach GitHub. Check your internet connection.',
       err_gone: 'That entry was already removed.',
       login_limit: 'Too many attempts. Try again in a few minutes.',
@@ -254,6 +271,12 @@
       pay_status: 'Status pembayaran', opt_pending: 'Belum selesai', opt_settled: 'Sudah selesai',
       do_no: 'Nombor DO', do_ph: 'cth. DO-0001', c_do: 'No. DO',
       sync_ok: 'Disegerakkan', sync_off: 'Luar talian - memaparkan data tersimpan terakhir',
+      install: 'Pasang aplikasi', install_phone: 'Pasang pada telefon ini', inst_title: 'Pasang aplikasi',
+      inst_ios: 'iPhone / iPad: buka halaman ini dalam Safari, ketik butang Kongsi (petak dengan anak panah), pilih "Add to Home Screen", kemudian ketik "Add".',
+      inst_android: 'Android: buka halaman ini dalam Chrome, ketik menu ⋮ di penjuru kanan atas, kemudian pilih "Install app" (atau "Add to Home screen").',
+      inst_desktop: 'Komputer: dalam Chrome atau Edge, klik ikon pasang di hujung kanan bar alamat.',
+      inst_inapp: 'Buka pautan ini dari WhatsApp, Telegram, Facebook atau aplikasi lain? Pemasangan tidak berfungsi di situ. Ketik ⋮ (atau ikon kompas / kongsi) dan pilih "Open in Chrome" (Android) atau "Open in Safari" (iPhone), kemudian ikut langkah di atas.',
+      inst_after: 'Selepas dipasang, buka aplikasi dari skrin utama, log masuk, dan sambung ke GitHub sekali pada telefon itu.',
       gh_title: 'Sambung ke GitHub', gh_help: 'Entri disimpan dalam data.json di repositori GitHub supaya semua peranti memaparkan data yang sama. Setiap peranti memerlukan token akses sekali sahaja.', gh_repo: 'Repositori data (pemilik/nama)', gh_branch: 'Cabang (pilihan)', gh_path: 'Fail', gh_token: 'Token akses', gh_token_note: 'Gunakan token terperinci yang terhad kepada repositori ini dengan Contents: Read and write. Ia kekal dalam pelayar ini sahaja.', gh_save: 'Simpan & sambung', gh_disconnect: 'Putuskan', close: 'Tutup', sync_none: 'Belum disambung - ketik untuk tetapkan', sync_err: 'Masalah segerak - ketik untuk baiki', toast_connected: 'Disambung ke GitHub', toast_disconnected: 'Diputuskan', e_need: 'Masukkan repositori (pemilik/nama) dan token akses.', e_token: 'GitHub menolak token. Semak ia betul dan belum tamat tempoh.', e_access: 'Token tidak boleh menggunakan repositori ini. Ia memerlukan Contents: Read and write.', e_rate: 'GitHub sedang menghadkan permintaan. Cuba lagi sebentar lagi.', e_repo: 'Repositori tidak ditemui, atau token tidak dapat melihatnya.', e_branch: 'Cabang tidak ditemui dalam repositori.', e_file: 'data.json mempunyai entri tidak sah, jadi aplikasi tidak akan menimpanya. Baiki fail di GitHub.', e_conflict: 'Beberapa orang menyimpan serentak. Sila cuba lagi.', login_load_err: 'Tidak dapat memuatkan users.json. Buka aplikasi ini melalui alamat web (http/https), bukan dari fail.', no_crypto: 'Log masuk memerlukan halaman selamat (https atau localhost).', err_net: 'Tidak dapat menghubungi GitHub. Semak sambungan internet anda.',
       err_gone: 'Entri itu sudah dibuang.',
       login_limit: 'Terlalu banyak percubaan. Cuba lagi dalam beberapa minit.',
@@ -966,6 +989,42 @@
   $('#loginBtn').addEventListener('click', e => { e.preventDefault(); doLogin(); });
   $('#btnLogout').addEventListener('click', logout);
 
+  // ---------- Install app ----------
+  // Android / desktop Chrome can install straight from the button; iPhone Safari (and chat-app browsers) need the steps shown in the dialog.
+  let installEvt = null;
+  const standalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  const UA = navigator.userAgent || '';
+  const isIOS = /iphone|ipad|ipod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /android/i.test(UA);
+  function refreshInstall() {
+    const show = !standalone();
+    $('#btnInstall').style.display = show ? '' : 'none';
+    $('#loginInstall').style.display = show ? '' : 'none';
+  }
+  function openInstallHelp() {
+    const li = k => `<p>${esc(t(k))}</p>`;
+    const first = isIOS ? 'inst_ios' : isAndroid ? 'inst_android' : 'inst_desktop';
+    const rest = ['inst_ios', 'inst_android', 'inst_desktop'].filter(k => k !== first);
+    $('#installBody').innerHTML =
+      `<div class="rounded-lg bg-amber-50 border border-amber-200 p-3 font-medium">${esc(t(first))}</div>` +
+      `<div class="rounded-lg bg-rose-50 border border-rose-200 p-3 text-rose-800">${esc(t('inst_inapp'))}</div>` +
+      rest.map(li).join('') + `<p class="text-stone-500">${esc(t('inst_after'))}</p>`;
+    $('#installModal').style.display = 'flex';
+  }
+  async function installApp() {
+    if (installEvt) {
+      const e = installEvt; installEvt = null;
+      try { e.prompt(); const c = await e.userChoice; if (c && c.outcome === 'accepted') return; } catch (err) {}
+    }
+    openInstallHelp();
+  }
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+  window.addEventListener('appinstalled', () => { installEvt = null; refreshInstall(); });
+  $('#btnInstall').addEventListener('click', installApp);
+  $('#loginInstall').addEventListener('click', installApp);
+  $('#installClose').addEventListener('click', () => { $('#installModal').style.display = 'none'; });
+  $('#installModal').addEventListener('click', e => { if (e.target.id === 'installModal') $('#installModal').style.display = 'none'; });
+
   function registerSW() {
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
@@ -975,6 +1034,7 @@
   // ---------- Init ----------
   $('#fDate').value = today();
   applyLang(); setTab('overview');
+  refreshInstall();
   loadDefaults().finally(restoreSession); registerSW();
 })();
 </script>
