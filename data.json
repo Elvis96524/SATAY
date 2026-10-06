@@ -1,6 +1,17 @@
 {
   "app": "satay-dashboard",
   "version": 2,
-  "updatedAt": "2026-10-05T06:52:41.294Z",
-  "transactions": []
+  "updatedAt": "2026-10-06T08:14:19.337Z",
+  "transactions": [
+    {
+      "id": "0muwekamhrlj2l3",
+      "date": "2026-09-07",
+      "vendor": "FSE",
+      "item": "Beef Topside",
+      "type": "purchase",
+      "qty": 40,
+      "price": 24,
+      "status": "pending"
+    }
+  ]
 }
