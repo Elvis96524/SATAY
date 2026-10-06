@@ -1,7 +1,7 @@
 {
   "app": "satay-dashboard",
   "version": 2,
-  "updatedAt": "2026-10-06T08:18:21.041Z",
+  "updatedAt": "2026-10-06T08:18:35.201Z",
   "transactions": [
     {
       "id": "0muwekamhrlj2l3",
@@ -135,6 +135,17 @@
       "item": "Satay Daging",
       "type": "resell",
       "qty": 1400,
+      "price": 0.7,
+      "status": "pending",
+      "doNo": "30163"
+    },
+    {
+      "id": "0muweps1tbqv9gi",
+      "date": "2026-10-05",
+      "vendor": "FSE",
+      "item": "Satay Ayam",
+      "type": "resell",
+      "qty": 1450,
       "price": 0.7,
       "status": "pending",
       "doNo": "30163"
