@@ -1,20 +1,4 @@
 {
-  "_readme": "passwordHash = SHA-256 hex of \"<username in lowercase>:<password>\" (to make one: open the browser console on any page and run  crypto.subtle.digest('SHA-256', new TextEncoder().encode('admin:newpassword')).then(b => console.log([...new Uint8Array(b)].map(x => x.toString(16).padStart(2,'0')).join('')))  ). Replace the sample accounts before you share the app. role: admin (can delete and clear all data) or staff (can add and update entries). Set active:false to block a user. On GitHub Pages this file is public, so it keeps casual visitors out but is not strong security.",
-  "users": [
-    {
-      "username": "admin",
-      "name": "Administrator",
-      "role": "admin",
-      "active": true,
-      "passwordHash": "bf6b5bdb74c79ece9fc0ad0ac9fb0359f9555d4f35a83b2e6ec69ae99e09603d"
-    },
-    {
-      "username": "staff",
-      "name": "Staff",
-      "role": "staff",
-      "active": true,
-      "passwordHash": "d15127858f71b6c259d34c4779c097f17f59c81ff986f67cc88aa6bb3ad72a0f"
-    }
-  ],
-  "version": 2
+  "users": [],
+  "_readme": "Accounts now live inside the encrypted data.json."
 }
