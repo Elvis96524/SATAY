@@ -168,6 +168,17 @@
       <button type="button" id="umUnlock" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium disabled:opacity-50" data-i18n="um_unlock">Unlock</button>
     </div>
     <div id="umPanel" style="display:none" class="mt-4 space-y-5 text-sm">
+      <div id="umEnc" style="display:none" class="rounded-xl bg-amber-50 border border-amber-200 p-4 space-y-3">
+        <h3 class="font-medium" data-i18n="um_enc_title">Turn on data encryption</h3>
+        <p class="text-stone-700" data-i18n="um_enc_help"></p>
+        <div class="flex gap-2">
+          <input id="umEncPw" type="text" autocomplete="off" autocapitalize="none" class="min-w-0 flex-1 rounded-lg border border-stone-300 px-3 py-2" data-i18n-ph="um_pw">
+          <button type="button" id="umEncGen" class="px-3 py-2 rounded-lg bg-white border border-stone-300 hover:bg-stone-100" data-i18n="um_gen">Generate</button>
+        </div>
+        <p id="umEncMsg" style="display:none" class="text-xs text-rose-600"></p>
+        <div class="flex justify-end"><button type="button" id="umEncBtn" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium" data-i18n="um_enc_go">Turn on encryption</button></div>
+      </div>
+      <div id="umManage" style="display:none" class="space-y-5">
       <div id="umList" class="divide-y divide-stone-100 border border-stone-200 rounded-xl"></div>
       <div class="rounded-xl bg-stone-50 border border-stone-200 p-4 space-y-3">
         <h3 class="font-medium" data-i18n="um_add">Add a user</h3>
@@ -187,13 +198,13 @@
               <button type="button" id="umGen" class="px-3 py-2 rounded-lg bg-white border border-stone-300 hover:bg-stone-100" data-i18n="um_gen">Generate</button>
             </div></label>
         </div>
-        <label class="flex items-start gap-2 text-xs text-stone-600"><input type="checkbox" id="umAuto" checked class="mt-0.5"><span data-i18n="um_auto"></span></label>
         <p id="umMsg" style="display:none" class="text-xs"></p>
         <div id="umCredBox" style="display:none" class="rounded-lg bg-emerald-50 border border-emerald-200 p-3 space-y-2">
           <pre id="umCred" class="whitespace-pre-wrap break-all font-mono text-xs"></pre>
           <button type="button" id="umCopy" class="px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 text-xs font-medium" data-i18n="um_copy">Copy sign-in details</button>
         </div>
         <div class="flex justify-end"><button type="button" id="umAddBtn" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-medium" data-i18n="um_add_btn">Add user</button></div>
+      </div>
       </div>
       <p class="text-xs text-stone-400" data-i18n="um_note"></p>
     </div>
@@ -272,15 +283,18 @@
       um_auto: 'Connect this person to GitHub automatically when they sign in (the access is saved in users.json, locked with their password). Untick it if they should paste the token themselves.',
       um_reset: 'Reset password', um_disable: 'Disable', um_enable: 'Enable', um_save: 'Save', um_you: '(you)', um_off: 'Disabled',
       um_old: 'old password format: reset the password to upgrade', um_auto_yes: 'connects automatically', um_auto_no: 'needs the access token on first use',
-      um_saving: 'Saving...', um_created: 'Account saved. Sign-in works in about a minute, once GitHub has published the change. Send these details to the person:',
-      um_pw_changed: 'Password changed. Sign-in with it works in about a minute. Send the new details to the person:',
+      um_saving: 'Saving...', um_created: 'Account saved. Send these details to the person:',
+      um_pw_changed: 'Password changed. Send the new details to the person:',
       um_copy: 'Copy sign-in details', um_copied: 'Copied', um_share_text: (url, id, pw) => `Satay app: ${url}\nID: ${id}\nPassword: ${pw}`,
       um_need_gh: 'Connect this device to GitHub first (tap the sync status at the top), then open Users again.',
       um_e_user: 'The ID must be 3-32 letters, numbers, dots, dashes or underscores.', um_e_name: 'Enter the full name.',
       um_e_pw: 'The password needs at least 10 characters, with letters and numbers.', um_e_exists: 'That ID is already used.',
       um_e_file: 'users.json is missing or damaged, so nothing was changed. Check the file on GitHub.', um_e_gone: 'That user no longer exists.',
       um_confirm_del: n => `Delete the account for ${n}?`,
-      um_note: 'Removing someone does not erase what their phone already holds. To cut off access completely: create a new GitHub token, connect this device with it, then reset every other person\'s password.',
+      um_note: 'Everything in data.json is encrypted. Disabling or deleting someone changes the data key, so their phone can no longer open the data (they were also able to see the GitHub token: replace it from the sync status if you need to be sure).',
+      um_enc_title: 'Turn on data encryption', um_enc_help: 'Encrypts data.json (entries, accounts and the GitHub token) with a key that only signed-in accounts can open. Choose a new password for your admin account. Other accounts (from the old users.json) are not moved: add them again afterwards. Everyone is signed out.',
+      um_enc_go: 'Turn on encryption', um_enc_confirm: 'Encrypt the shared data now? Enter your current admin password to confirm.', um_enc_done: 'Data is now encrypted. Add the other users.',
+      access_changed: 'Your access changed or the data key was renewed. Please sign in again.', um_e_state: 'The data file changed in the meantime. Close and reopen Users, then try again.',
       install: 'Install app', install_phone: 'Install on this phone', inst_title: 'Install the app',
       inst_ios: 'iPhone / iPad: open this page in Safari, tap the Share button (square with an arrow), choose "Add to Home Screen", then tap "Add".',
       inst_android: 'Android: open this page in Chrome, tap the ⋮ menu at the top right, then choose "Install app" (or "Add to Home screen").',
@@ -337,15 +351,18 @@
       um_auto: 'Sambungkan orang ini ke GitHub secara automatik apabila log masuk (akses disimpan dalam users.json, dikunci dengan kata laluan mereka). Nyahtanda jika mereka perlu tampal token sendiri.',
       um_reset: 'Tetap semula kata laluan', um_disable: 'Lumpuhkan', um_enable: 'Aktifkan', um_save: 'Simpan', um_you: '(anda)', um_off: 'Dilumpuhkan',
       um_old: 'format kata laluan lama: tetapkan semula untuk naik taraf', um_auto_yes: 'bersambung secara automatik', um_auto_no: 'perlu token akses pada penggunaan pertama',
-      um_saving: 'Menyimpan...', um_created: 'Akaun disimpan. Log masuk berfungsi dalam kira-kira satu minit, selepas GitHub menerbitkan perubahan. Hantar butiran ini kepada orang itu:',
-      um_pw_changed: 'Kata laluan ditukar. Log masuk dengannya berfungsi dalam kira-kira satu minit. Hantar butiran baharu kepada orang itu:',
+      um_saving: 'Menyimpan...', um_created: 'Akaun disimpan. Hantar butiran ini kepada orang itu:',
+      um_pw_changed: 'Kata laluan ditukar. Hantar butiran baharu kepada orang itu:',
       um_copy: 'Salin butiran log masuk', um_copied: 'Disalin', um_share_text: (url, id, pw) => `Aplikasi Satay: ${url}\nID: ${id}\nKata laluan: ${pw}`,
       um_need_gh: 'Sambungkan peranti ini ke GitHub dahulu (ketik status segerak di atas), kemudian buka Pengguna semula.',
       um_e_user: 'ID mestilah 3-32 huruf, nombor, titik, sempang atau garis bawah.', um_e_name: 'Masukkan nama penuh.',
       um_e_pw: 'Kata laluan memerlukan sekurang-kurangnya 10 aksara, dengan huruf dan nombor.', um_e_exists: 'ID itu sudah digunakan.',
       um_e_file: 'users.json hilang atau rosak, jadi tiada apa yang diubah. Semak fail di GitHub.', um_e_gone: 'Pengguna itu sudah tiada.',
       um_confirm_del: n => `Padam akaun ${n}?`,
-      um_note: 'Mengeluarkan seseorang tidak memadam apa yang telefon mereka sudah ada. Untuk menutup akses sepenuhnya: buat token GitHub baharu, sambungkan peranti ini dengannya, kemudian tetapkan semula kata laluan setiap orang lain.',
+      um_note: 'Semua dalam data.json disulitkan. Melumpuhkan atau memadam seseorang menukar kunci data, jadi telefon mereka tidak lagi boleh membuka data (mereka juga pernah melihat token GitHub: gantikannya dari status segerak jika perlu pasti).',
+      um_enc_title: 'Hidupkan penyulitan data', um_enc_help: 'Menyulitkan data.json (entri, akaun dan token GitHub) dengan kunci yang hanya boleh dibuka akaun yang log masuk. Pilih kata laluan baharu untuk akaun admin anda. Akaun lain (dari users.json lama) tidak dipindahkan: tambah semula selepas ini. Semua orang akan dilog keluar.',
+      um_enc_go: 'Hidupkan penyulitan', um_enc_confirm: 'Sulitkan data kongsi sekarang? Masukkan kata laluan admin semasa untuk mengesahkan.', um_enc_done: 'Data kini disulitkan. Tambah pengguna lain.',
+      access_changed: 'Akses anda berubah atau kunci data diperbaharui. Sila log masuk semula.', um_e_state: 'Fail data berubah. Tutup dan buka semula Pengguna, kemudian cuba lagi.',
       install: 'Pasang aplikasi', install_phone: 'Pasang pada telefon ini', inst_title: 'Pasang aplikasi',
       inst_ios: 'iPhone / iPad: buka halaman ini dalam Safari, ketik butang Kongsi (petak dengan anak panah), pilih "Add to Home Screen", kemudian ketik "Add".',
       inst_android: 'Android: buka halaman ini dalam Chrome, ketik menu ⋮ di penjuru kanan atas, kemudian pilih "Install app" (atau "Add to Home screen").',
@@ -405,7 +422,7 @@
   const BY_NAME = Object.fromEntries(ITEMS.map(i => [i.name, i]));
   const unitLabel = name => t('u_' + BY_NAME[name].unit);
   const CACHE_KEY = 'satay-cache-v3', GH_KEY = 'satay-gh', SESSION_KEY = 'satay-session';
-  const OLD_KEY = 'satay-dashboard-v2', MIGRATED_KEY = 'satay-migrated';
+  const OLD_KEY = 'satay-dashboard-v2', MIGRATED_KEY = 'satay-migrated', KEY_KEY = 'satay-key';
   const POLL_MS = 10000;
 
   // ---------- State ----------
@@ -413,6 +430,8 @@
   let state = { tx: [], rev: -1 };
   let ui = { tab: 'overview', status: 'all', q: '' };
   let gh = null, ghDefaults = { repo: '', branch: '', path: 'data.json' }, etag = null, syncErr = '', session = null, online = true;
+  // Encryption: master = the data key (bytes) while signed in to an encrypted data.json; curDoc / curUsers = the latest decrypted document and its key table.
+  let master = null, curDoc = null, curUsers = null;
 
   const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
@@ -768,6 +787,21 @@
     catch (e) { throw gerr(0, 'bad_file', e.message); }   // never treat a damaged file as empty: the next save would erase it
   }
 
+  // data.json is either the old plain file or an encrypted envelope. Never treat a file we cannot read as empty.
+  async function parseFile(text) {
+    if (!String(text).trim()) return { tx: [], doc: { transactions: [] }, users: null, enc: false };
+    let j; try { j = JSON.parse(text); } catch (e) { throw gerr(0, 'bad_file', 'data.json is not valid JSON'); }
+    if (j && typeof j === 'object' && j.satayEncrypted) {
+      if (!master) throw gerr(0, 'bad_key');
+      let doc; try { doc = await openDoc(j, master); } catch (e) { throw gerr(0, 'bad_key'); }
+      let tx; try { tx = cleanList(doc.transactions || [], true); } catch (e) { throw gerr(0, 'bad_file', e.message); }
+      doc.transactions = tx; doc.users = Array.isArray(doc.users) ? doc.users : [];
+      return { tx, doc, users: j.users && typeof j.users === 'object' ? j.users : {}, enc: true };
+    }
+    const tx = parseData(text);
+    return { tx, doc: { transactions: tx }, users: null, enc: false };
+  }
+
   const repoApi = () => 'https://api.github.com/repos/' + gh.repo;
   const filePath = () => (gh.path || 'data.json').replace(/^\/+/, '').split('/').map(encodeURIComponent).join('/');
   async function ghFetch(method, url, body, headers) {
@@ -800,7 +834,7 @@
     if (res.status === 404) {
       const e = await ghError(res);
       if (e.code === 'branch_not_found') throw e;
-      return { tx: [], sha: null, etag: null };              // no data.json yet: it is created on the first save
+      return { tx: [], doc: { transactions: [] }, users: null, enc: false, sha: null, etag: null };   // no data.json yet: it is created on the first save
     }
     if (!res.ok) throw await ghError(res);
     const j = await res.json();
@@ -812,13 +846,14 @@
       if (!r2.ok) throw await ghError(r2);
       text = await r2.text();
     }
-    return { tx: parseData(text), sha: j.sha, etag: res.headers.get('ETag') };
+    return { ...(await parseFile(text)), sha: j.sha, etag: res.headers.get('ETag') };
   }
-  async function ghWrite(tx, sha) {
-    const body = {
-      message: 'Update data (' + (session ? session.username : 'app') + ')',
-      content: toB64(JSON.stringify({ app: 'satay-dashboard', version: 2, updatedAt: new Date().toISOString(), transactions: tx }, null, 2) + '\n')
-    };
+  async function ghWrite(ctx, sha) {
+    const payload = { ...ctx.doc, app: 'satay-dashboard', version: ctx.master ? 3 : 2, updatedAt: new Date().toISOString() };
+    let text;
+    if (ctx.master) text = JSON.stringify(await sealDoc(payload, ctx.master, ctx.users || {}), null, 2) + '\n';
+    else { delete payload.users; delete payload.gh; text = JSON.stringify(payload, null, 2) + '\n'; }
+    const body = { message: 'Update data (' + (session ? session.username : 'app') + ')', content: toB64(text) };
     if (sha) body.sha = sha;
     if (gh.branch) body.branch = gh.branch;
     const res = await ghFetch('PUT', repoApi() + '/contents/' + filePath(), body);
@@ -826,19 +861,21 @@
     if (!res.ok) throw await ghError(res);
     return (await res.json()).content.sha;
   }
-  // Apply a change to the latest data and save it. mutator(list) must return the new list (or throw).
+  // Apply a change to the latest document and save it. mutator(ctx) gets { doc, users, master } (copies) and returns the new ctx (or throws).
   let chain = Promise.resolve(), quietUntil = 0;
-  function commit(mutator) {
+  function commitDoc(mutator) {
     const run = chain.then(async () => {
       if (!gh) throw gerr(0, 'not_connected');
-      let known = state.rev !== -1 ? { tx: state.tx, sha: state.rev } : null;
+      let known = state.rev !== -1 && curDoc ? { doc: curDoc, users: curUsers, sha: state.rev } : null;
       for (let i = 0; i < 5; i++) {
-        if (!known) { const r = await ghRead(); known = { tx: r.tx, sha: r.sha }; }
-        const next = mutator(known.tx);
+        if (!known) { const r = await ghRead(); known = { doc: r.doc, users: r.users, sha: r.sha }; }
+        const ctx = { doc: JSON.parse(JSON.stringify(known.doc)), users: known.users ? JSON.parse(JSON.stringify(known.users)) : null, master };
+        const next = await mutator(ctx);
         try {
           const sha = await ghWrite(next, known.sha);
+          if (next.master !== master) setMaster(next.master);
           etag = null; quietUntil = Date.now() + 4000;       // don't let an immediate re-read bring back an older copy
-          return { transactions: next, rev: sha };
+          return { transactions: next.doc.transactions, rev: sha, doc: next.doc, users: next.users };
         } catch (e) {
           if (e.code !== 'conflict') throw e;
           known = null; await new Promise(r => setTimeout(r, 250 * (i + 1)));
@@ -847,11 +884,12 @@
       throw gerr(409, 'conflict');
     });
     chain = run.catch(() => {});
-    return run;
+    return run.catch(e => { if (e.code === 'bad_key') setTimeout(forceLogout, 0); throw e; });
   }
+  const commit = listMutator => commitDoc(ctx => { ctx.doc.transactions = listMutator(ctx.doc.transactions); return ctx; });
   function applyServer(j) {
-    state = { tx: j.transactions, rev: j.rev };
-    lsSet(CACHE_KEY, JSON.stringify(state));                 // last-known copy, so the app still shows data offline
+    state = { tx: j.transactions, rev: j.rev }; curDoc = j.doc; curUsers = j.users;
+    saveCache();                                             // last-known copy, so the app still shows data offline
     renderAll();
   }
   function setOnline(v) { if (online !== v) { online = v; refreshChip(); } }
@@ -859,16 +897,17 @@
     if (e.message === 'nocrypto') return t('no_crypto');
     if (e.code === 'not_found') return t('err_gone');
     if (e.status === 0 && e.code === 'network') return t('err_net');
-    const k = { bad_token: 'e_token', no_access: 'e_access', rate_limit: 'e_rate', repo_not_found: 'e_repo', branch_not_found: 'e_branch', bad_file: 'e_file', conflict: 'e_conflict', not_connected: 'sync_none',
+    const k = { bad_key: 'access_changed', not_encrypted: 'um_e_state', already_encrypted: 'um_e_state', bad_token: 'e_token', no_access: 'e_access', rate_limit: 'e_rate', repo_not_found: 'e_repo', branch_not_found: 'e_branch', bad_file: 'e_file', conflict: 'e_conflict', not_connected: 'sync_none',
       v_name: 'um_e_name', v_user: 'um_e_user', v_pw: 'um_e_pw', user_exists: 'um_e_exists', bad_users: 'um_e_file', no_user: 'um_e_gone' }[e.code];
     return k ? t(k) : (e.message || t('err_save'));
   }
 
 
-  // ---------- Accounts: passwords, locked GitHub access, users.json ----------
-  // A new account stores PBKDF2(password) as a check value, plus the GitHub access encrypted with a key from the same password
-  // (AES-GCM). Signing in unlocks it, so the person never has to paste a token. Old accounts (plain SHA-256 hash) still sign in.
-  const USERS_PATH = 'users.json', PW_ITER = 600000;
+  // ---------- Encryption (same design as the stock-tracker app) ----------
+  // data.json is an AES-256-GCM envelope. A random data key encrypts the document (entries, accounts, GitHub access).
+  // Each account holds a copy of that key wrapped with a key derived from its own password (PBKDF2). The password never leaves the device.
+  // The wrap material of every account is also kept inside the encrypted document, so removing someone can renew the data key and re-wrap it for the rest.
+  const PW_ITER = 600000, ENC_ITER = 250000, USERS_PATH = 'users.json';
   const lowerEq = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
   const validUsername = u => /^[A-Za-z0-9._-]{3,32}$/.test(String(u));
   const pwProblem = pw => (String(pw).length < 10 || !/[A-Za-z]/.test(pw) || !/\d/.test(pw)) ? 'v_pw' : '';
@@ -881,27 +920,69 @@
     } while (pwProblem(out));
     return out;
   }
+  const te = new TextEncoder(), td = new TextDecoder();
   const bytesToB64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
   const b64ToBytes = b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const randB64 = n => bytesToB64(crypto.getRandomValues(new Uint8Array(n)));
+  const uidOf = u => sha256(String(u).trim().toLowerCase());
+  const aesKey = (raw, use) => crypto.subtle.importKey('raw', raw, 'AES-GCM', false, use);
+  async function wrapBitsFrom(pw, saltB64, iter) {
+    const km = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveBits']);
+    return new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: b64ToBytes(saltB64), iterations: iter }, km, 256));
+  }
+  async function wrapMaster(masterRaw, wb, uid) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: te.encode(uid) }, await aesKey(wb, ['encrypt']), masterRaw));
+    return { iv: bytesToB64(iv), wk: bytesToB64(ct) };
+  }
+  async function unwrapMaster(ent, wb, uid) {
+    return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(ent.iv), additionalData: te.encode(uid) }, await aesKey(wb, ['decrypt']), b64ToBytes(ent.wk)));
+  }
+  async function sealDoc(payload, masterRaw, users) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await aesKey(masterRaw, ['encrypt']), te.encode(JSON.stringify(payload))));
+    return { satayEncrypted: 3, alg: 'AES-256-GCM', iv: bytesToB64(iv), data: bytesToB64(ct), users };
+  }
+  async function openDoc(env, masterRaw) {
+    return JSON.parse(td.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(env.iv) }, await aesKey(masterRaw, ['decrypt']), b64ToBytes(env.data))));
+  }
+  async function buildEntries(users, masterRaw) {            // key table for every active account
+    const out = {};
+    for (const u of users) if (u.active !== false) out[u.id] = { salt: u.salt, iter: u.iter, ...(await wrapMaster(masterRaw, b64ToBytes(u.wb), u.id)) };
+    return out;
+  }
+  const newMasterKey = () => crypto.getRandomValues(new Uint8Array(32));
+  function setMaster(raw) { master = raw || null; if (raw) lsSet(KEY_KEY, bytesToB64(raw)); else lsDel(KEY_KEY); }
+
+  // Offline copy of the entries; encrypted with the data key whenever the data is encrypted.
+  async function saveCache() {
+    try {
+      if (!master) return lsSet(CACHE_KEY, JSON.stringify(state));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await aesKey(master, ['encrypt']), te.encode(JSON.stringify({ tx: state.tx }))));
+      lsSet(CACHE_KEY, JSON.stringify({ enc: 1, iv: bytesToB64(iv), ct: bytesToB64(ct) }));
+    } catch (e) {}
+  }
+  async function loadCache() {
+    try {
+      const c = JSON.parse(lsGet(CACHE_KEY)); if (!c) return null;
+      if (c.enc) {
+        if (!master) return null;
+        const p = JSON.parse(td.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(c.iv) }, await aesKey(master, ['decrypt']), b64ToBytes(c.ct))));
+        return Array.isArray(p.tx) ? p.tx : null;
+      }
+      return !master && Array.isArray(c.tx) ? c.tx : null;
+    } catch (e) { return null; }
+  }
+
+  // Old accounts (users.json) - only used until encryption is turned on.
   async function deriveFromPassword(pw, saltB64, iter) {      // 64 bytes: first half = check value, second half = AES key
-    const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+    const km = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveBits']);
     const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: b64ToBytes(saltB64), iterations: iter }, km, 512));
     return { verifier: bytesToB64(bits.slice(0, 32)), key: await crypto.subtle.importKey('raw', bits.slice(32), 'AES-GCM', false, ['encrypt', 'decrypt']) };
   }
-  async function seal(key, obj) {
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj))));
-    return { iv: bytesToB64(iv), ct: bytesToB64(ct) };
-  }
   async function unseal(key, v) {
-    return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(v.iv) }, key, b64ToBytes(v.ct))));
-  }
-  async function makeCredential(pw, cfg) {                   // cfg = GitHub access to lock inside the account, or null
-    const salt = bytesToB64(crypto.getRandomValues(new Uint8Array(16)));
-    const { verifier, key } = await deriveFromPassword(pw, salt, PW_ITER);
-    const rec = { iter: PW_ITER, salt, verifier };
-    if (cfg) rec.vault = await seal(key, cfg);
-    return rec;
+    return JSON.parse(td.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(v.iv) }, key, b64ToBytes(v.ct))));
   }
   async function checkPassword(user, pw) {                    // -> { ok, key? }   key opens user.vault
     if (user.verifier && user.salt) {
@@ -913,18 +994,6 @@
   }
 
   const encPath = p => p.replace(/^\/+/, '').split('/').map(encodeURIComponent).join('/');
-  async function ghGetFile(path) {                            // fresh copy straight from GitHub: { text, sha } or null
-    const url = repoApi() + '/contents/' + encPath(path) + (gh.branch ? '?ref=' + encodeURIComponent(gh.branch) : '');
-    const res = await ghFetch('GET', url);
-    if (res.status === 404) { const e = await ghError(res); if (e.code === 'branch_not_found') throw e; return null; }
-    if (!res.ok) throw await ghError(res);
-    const j = await res.json();
-    if (Array.isArray(j) || j.type === 'dir') throw gerr(0, 'bad_users', 'folder');
-    if (j.encoding === 'base64' && j.content != null && j.content !== '') return { text: fromB64(j.content), sha: j.sha };
-    const r2 = await ghFetch('GET', url, undefined, { Accept: 'application/vnd.github.raw+json' });
-    if (!r2.ok) throw await ghError(r2);
-    return { text: await r2.text(), sha: j.sha };
-  }
   async function ghPutFile(path, text, sha, message) {
     const body = { message, content: toB64(text) };
     if (sha) body.sha = sha;
@@ -933,20 +1002,17 @@
     if (res.status === 409 || res.status === 422) throw gerr(res.status, 'conflict');
     if (!res.ok) throw await ghError(res);
   }
-  // Read the latest users.json, let mutate(doc) change it, save it. Retries if someone saved at the same moment.
-  // A missing or damaged file is never overwritten (that would lock everyone out).
-  async function updateUsersFile(mutate) {
-    for (let i = 0; i < 5; i++) {
-      const cur = await ghGetFile(USERS_PATH);
-      let doc = null; try { doc = cur ? JSON.parse(cur.text) : null; } catch (e) {}
-      if (Array.isArray(doc)) doc = { users: doc };
-      if (!doc || typeof doc !== 'object' || !Array.isArray(doc.users)) throw gerr(0, 'bad_users', 'users.json is missing or damaged');
-      const next = await mutate(JSON.parse(JSON.stringify(doc)));
-      next.version = 2;
-      try { await ghPutFile(USERS_PATH, JSON.stringify(next, null, 2) + '\n', cur.sha, 'Update users (' + (session ? session.username : 'app') + ')'); return next; }
-      catch (e) { if (e.code !== 'conflict') throw e; await new Promise(r => setTimeout(r, 250 * (i + 1))); }
+  // Read data.json without signing in (the file is encrypted, so this is safe): GitHub's API first (always fresh), then the published site.
+  async function fetchPublicFile(tg) {
+    if (tg.repo) {
+      try {
+        const r = await fetch('https://api.github.com/repos/' + tg.repo + '/contents/' + encPath(tg.path || 'data.json') + (tg.branch ? '?ref=' + encodeURIComponent(tg.branch) : ''),
+          { headers: { Accept: 'application/vnd.github.raw+json' }, cache: 'no-store' });
+        if (r.ok) return await r.text();
+      } catch (e) {}
     }
-    throw gerr(409, 'conflict');
+    try { const r = await fetch(new URL(encPath(tg.path || 'data.json'), location.href).href, { cache: 'no-cache' }); if (r.ok) return await r.text(); } catch (e) {}
+    return null;
   }
 
   // ---------- Live sync ----------
@@ -969,16 +1035,35 @@
       if (syncErr) { syncErr = ''; refreshChip(); }
       if (!r.unchanged) {
         etag = r.etag;
+        if (r.enc && !(await stillAllowed(r.doc))) return;
         if (force || r.sha !== state.rev) {
-          state = { tx: r.tx, rev: r.sha };
-          lsSet(CACHE_KEY, JSON.stringify(state));
+          state = { tx: r.tx, rev: r.sha }; curDoc = r.doc; curUsers = r.users;
+          saveCache();
           renderSoon();
         }
       }
       if (!checkedLocal) { checkedLocal = true; offerLocalUpload(); }
     } catch (e) {
+      if (e.code === 'bad_key') { forceLogout(); return; }                 // the data key was renewed or this account was removed
+      if (e.code === 'bad_token' && master && await pullGhAccess()) { setTimeout(() => refresh(true), 0); return; }   // the admin replaced the GitHub token
       if (e.code !== 'network') { syncErr = e.code || 'error'; refreshChip(); }   // offline just keeps showing the last data
     } finally { refreshing = false; }
+  }
+  // After the admin replaces the GitHub token, the new one is inside the encrypted file (readable without a token): fetch it.
+  async function pullGhAccess() {
+    try {
+      const txt = await fetchPublicFile(gh), doc = await openDoc(JSON.parse(txt), master);
+      if (doc.gh && doc.gh.repo && doc.gh.token && doc.gh.token !== gh.token) { gh = { ...doc.gh }; lsSet(GH_KEY, JSON.stringify(gh)); return true; }
+    } catch (e) {}
+    return false;
+  }
+  async function stillAllowed(doc) {                         // is this account still in the data?
+    if (!session) return false;
+    const uid = await uidOf(session.username), me = (doc.users || []).find(x => x.id === uid);
+    if (!me || me.active === false) { forceLogout(); return false; }
+    const fresh = userInfo(me);
+    if (fresh.role !== session.role || fresh.name !== session.name) { lsSet(SESSION_KEY, JSON.stringify(fresh)); setSession(fresh); renderAll(); }
+    return true;
   }
   function startSync() {
     stopSync(); checkedLocal = false; etag = null;
@@ -1045,8 +1130,10 @@
       if (!rr.ok) throw await ghError(rr);
       const r = await ghRead();                                // can the data file be read (or does it not exist yet)?
       lsSet(GH_KEY, JSON.stringify(cfg));
-      state = { tx: r.tx, rev: r.sha }; etag = r.etag; syncErr = '';
-      lsSet(CACHE_KEY, JSON.stringify(state));
+      state = { tx: r.tx, rev: r.sha }; curDoc = r.doc; curUsers = r.users; etag = r.etag; syncErr = '';
+      saveCache();
+      if (master && r.enc && session && session.role === 'admin')   // the admin's connection is shared with everyone through the encrypted file
+        applyServer(await commitDoc(ctx => { ctx.doc.gh = { repo: cfg.repo, branch: cfg.branch, path: cfg.path, token: cfg.token }; return ctx; }));
       closeGh(); renderAll(); refreshChip(); startSync(); toast(t('toast_connected'));
     } catch (e) {
       gh = prev; ghMsg(errText(e));
@@ -1054,7 +1141,7 @@
   }
   function disconnectGh() {
     stopSync(); gh = null; etag = null; syncErr = '';
-    lsDel(GH_KEY); lsDel(CACHE_KEY); state = { tx: [], rev: -1 };
+    lsDel(GH_KEY); lsDel(CACHE_KEY); state = { tx: [], rev: -1 }; curDoc = null; curUsers = null;
     closeGh(); renderAll(); refreshChip(); toast(t('toast_disconnected'));
   }
   $('#syncChip').addEventListener('click', () => openGh(gh && syncErr ? errText({ code: syncErr }) : ''));
@@ -1064,8 +1151,8 @@
   $('#ghModal').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); saveGh(); } else if (e.key === 'Escape') closeGh(); });
 
   // ---------- Sign in ----------
-  // Passwords are checked in the browser against users.json (SHA-256 of "<username lowercase>:<password>").
-  // This is a convenience gate for a static site, not real security: anyone who can open the site can read users.json.
+  // Encrypted data: the password unlocks the data key (see Encryption). Nothing is checked against a server and no password list is published.
+  // Before encryption is turned on, the old users.json check is used (a convenience gate only: anyone can read that file).
   async function sha256(str) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
     return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -1080,12 +1167,17 @@
   async function verifyAdminPassword(pw) {
     if (!session || session.role !== 'admin' || !pw) return false;
     if (!(window.crypto && crypto.subtle)) throw new Error('nocrypto');
+    if (master) {                                            // the password must open this account's copy of the data key
+      const uid = await uidOf(session.username), ent = curUsers && curUsers[uid];
+      if (!ent) throw gerr(0, 'bad_key');
+      try { await unwrapMaster(ent, await wrapBitsFrom(pw, ent.salt, ent.iter), uid); return true; } catch (e) { return false; }
+    }
     const users = await loadUsers();
     const u = users.find(x => String(x.username).toLowerCase() === session.username.toLowerCase() && x.role === 'admin' && x.active !== false);
     return !!u && (await checkPassword(u, pw)).ok;
   }
   function refreshChip() {
-    $('#userChip').textContent = session ? `${session.name} · ${t(session.role === 'admin' ? 'role_admin' : 'role_staff')}` : '';
+    $('#userChip').textContent = session ? `${master ? '🔒 ' : ''}${session.name} · ${t(session.role === 'admin' ? 'role_admin' : 'role_staff')}` : '';
     const c = $('#syncChip');
     c.style.display = session ? '' : 'none';
     let key = 'sync_ok', dot = '● ', bad = false;
@@ -1103,16 +1195,25 @@
   }
   function logout() {
     stopSync();
-    lsDel(SESSION_KEY); lsDel(CACHE_KEY);                     // don't leave the data on a shared device (the GitHub connection stays)
-    state = { tx: [], rev: -1 }; etag = null; syncErr = '';
+    lsDel(SESSION_KEY); lsDel(CACHE_KEY); setMaster(null);    // don't leave the data or the data key on a shared device (the GitHub connection stays)
+    state = { tx: [], rev: -1 }; curDoc = null; curUsers = null; etag = null; syncErr = '';
     setSession(null); renderAll();
     if (pendingConfirm) closeConfirm();
     closeGh(); closeUsers();
+  }
+  function forceLogout() {
+    if (!session) return;
+    logout();
+    const err = $('#loginErr'); err.textContent = t('access_changed'); err.style.display = 'block';
   }
   function afterSignIn() {
     gh = loadGh();
     refreshChip();
     if (gh) startSync(); else openGh();
+  }
+  function loginTarget() {
+    const c = loadGh();
+    return { repo: (c && c.repo) || ghDefaults.repo, branch: c ? c.branch : ghDefaults.branch, path: (c && c.path) || ghDefaults.path || 'data.json' };
   }
   async function doLogin() {
     const err = $('#loginErr'); err.style.display = 'none';
@@ -1122,14 +1223,30 @@
     $('#loginBtn').disabled = true;
     try {
       if (!(window.crypto && crypto.subtle)) throw new Error('nocrypto');
-      const users = await loadUsers();
-      const found = users.find(x => String(x.username).toLowerCase() === u.toLowerCase() && x.active !== false);
-      const chk = found ? await checkPassword(found, p) : { ok: false };
-      if (!chk.ok) return showErr('login_err');
-      if (chk.key && found.vault) {                          // the account carries the GitHub access, locked with this password
-        try { const cfg = await unseal(chk.key, found.vault); if (cfg && cfg.repo && cfg.token) lsSet(GH_KEY, JSON.stringify(cfg)); } catch (e) {}
+      let env = null;
+      try { const j = JSON.parse(await fetchPublicFile(loginTarget())); if (j && j.satayEncrypted) env = j; } catch (e) {}
+      let sess;
+      if (env) {
+        const uid = await uidOf(u), ent = env.users && env.users[uid];
+        if (!ent) return showErr('login_err');
+        let raw; try { raw = await unwrapMaster(ent, await wrapBitsFrom(p, ent.salt, ent.iter), uid); } catch (e) { return showErr('login_err'); }
+        let doc; try { doc = await openDoc(env, raw); } catch (e) { return showErr('login_load_err'); }
+        const me = (doc.users || []).find(x => x.id === uid);
+        if (!me || me.active === false) return showErr('login_err');
+        setMaster(raw);
+        if (doc.gh && doc.gh.repo && doc.gh.token) lsSet(GH_KEY, JSON.stringify(doc.gh));
+        sess = userInfo(me);
+      } else {
+        const users = await loadUsers();
+        const found = users.find(x => String(x.username).toLowerCase() === u.toLowerCase() && x.active !== false);
+        const chk = found ? await checkPassword(found, p) : { ok: false };
+        if (!chk.ok) return showErr('login_err');
+        setMaster(null);
+        if (chk.key && found.vault) {                        // old account that carries the GitHub access, locked with its password
+          try { const cfg = await unseal(chk.key, found.vault); if (cfg && cfg.repo && cfg.token) lsSet(GH_KEY, JSON.stringify(cfg)); } catch (e) {}
+        }
+        sess = userInfo(found);
       }
-      const sess = userInfo(found);
       lsSet(SESSION_KEY, JSON.stringify(sess));
       $('#lPass').value = '';
       setSession(sess); afterSignIn();
@@ -1137,14 +1254,15 @@
       showErr(e.message === 'nocrypto' ? 'no_crypto' : 'login_load_err');
     } finally { $('#loginBtn').disabled = false; }
   }
-  function restoreSession() {
+  async function restoreSession() {
     let sess = null; try { sess = JSON.parse(lsGet(SESSION_KEY)); } catch (e) {}
     if (!sess || !sess.username) return setSession(null);
+    const k = lsGet(KEY_KEY);
+    if (k) { try { master = b64ToBytes(k); } catch (e) { master = null; } }
     setSession(sess);
-    try { const c = JSON.parse(lsGet(CACHE_KEY)); if (c && Array.isArray(c.tx)) { state = { tx: c.tx, rev: -1 }; renderAll(); } } catch (e) {}
+    const c = await loadCache(); if (c) { state = { tx: c, rev: -1 }; renderAll(); }
     afterSignIn();
-    // re-check against users.json when reachable (removes deactivated users, refreshes role and name)
-    loadUsers().then(users => {
+    if (!master) loadUsers().then(users => {                 // old accounts: re-check against users.json when reachable
       const u = users.find(x => String(x.username).toLowerCase() === String(sess.username).toLowerCase() && x.active !== false);
       if (!u) return logout();
       const fresh = userInfo(u); lsSet(SESSION_KEY, JSON.stringify(fresh)); setSession(fresh);
@@ -1155,8 +1273,9 @@
   $('#btnLogout').addEventListener('click', logout);
 
   // ---------- Manage users (admin only) ----------
-  // Changes are saved to users.json in the connected repository. The admin password is asked again before the screen opens.
-  const um = { unlocked: false, users: [], resetFor: null, busy: false };
+  // Accounts live inside the encrypted data.json. The admin password is asked again before the screen opens.
+  // Disabling or deleting someone renews the data key and re-wraps it for the others, so the removed account's copy of the key stops working.
+  const um = { unlocked: false, users: [], resetFor: null, busy: false, enc: false };
   function umMsg(text, kind) {
     const e = $('#umMsg'); e.textContent = text || ''; e.style.display = text ? 'block' : 'none';
     e.className = 'text-xs ' + (kind === 'ok' ? 'text-emerald-700' : 'text-rose-600');
@@ -1170,14 +1289,14 @@
   function umRender() {
     const me = session ? session.username : '';
     $('#umList').innerHTML = um.users.map(u => {
-      const self = lowerEq(u.username, me), legacy = !u.verifier && !!u.passwordHash, off = u.active === false, id = esc(u.username);
+      const self = lowerEq(u.username, me), off = u.active === false, id = esc(u.username);
       const editing = um.resetFor && lowerEq(um.resetFor, u.username);
       return `<div class="p-3 space-y-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="min-w-0">
             <div class="font-medium">${esc(u.name || u.username)}${self ? ` <span class="text-stone-400 font-normal">${esc(t('um_you'))}</span>` : ''}
               <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-medium ${u.role === 'admin' ? 'bg-violet-100 text-violet-700' : 'bg-sky-100 text-sky-700'}">${esc(t(u.role === 'admin' ? 'role_admin' : 'role_staff'))}</span>${off ? ` <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700">${esc(t('um_off'))}</span>` : ''}</div>
-            <div class="text-xs text-stone-500">${id} &middot; ${esc(u.vault ? t('um_auto_yes') : t('um_auto_no'))}${legacy ? ` &middot; <span class="text-amber-700">${esc(t('um_old'))}</span>` : ''}</div>
+            <div class="text-xs text-stone-500">${id}</div>
           </div>
           <div class="flex flex-wrap gap-1 text-xs">
             <button type="button" data-um="reset" data-u="${id}" class="px-2 py-1 rounded-md bg-stone-100 hover:bg-stone-200">${esc(t('um_reset'))}</button>
@@ -1194,11 +1313,10 @@
     }).join('') || '<p class="p-3 text-stone-400">-</p>';
   }
   async function umLoad() {
-    const cur = await ghGetFile(USERS_PATH);
-    let doc = null; try { doc = cur ? JSON.parse(cur.text) : null; } catch (e) {}
-    if (Array.isArray(doc)) doc = { users: doc };
-    if (!doc || !Array.isArray(doc.users)) throw gerr(0, 'bad_users', 'users.json');
-    um.users = doc.users; umRender();
+    const r = await ghRead();
+    um.enc = !!r.enc; um.users = r.enc ? (r.doc.users || []) : [];
+    $('#umEnc').style.display = um.enc ? 'none' : 'block'; $('#umManage').style.display = um.enc ? 'block' : 'none';
+    umRender();
   }
   async function umRun(fn) {                                 // one change at a time
     if (um.busy) return;
@@ -1206,9 +1324,17 @@
     try { await fn(); } catch (e) { umMsg(errText(e), 'err'); }
     finally { um.busy = false; }
   }
-  const umCfg = () => $('#umAuto').checked && gh ? { repo: gh.repo, branch: gh.branch || '', path: gh.path || 'data.json', token: gh.token } : null;
   const umUser = name => um.users.find(x => lowerEq(x.username, name));
   const umIsSelf = name => session && lowerEq(name, session.username);
+  // Save a change to the accounts: the key table is rebuilt from the accounts' wrap material.
+  const umCommit = fn => commitDoc(async ctx => {
+    if (!ctx.master) throw gerr(0, 'not_encrypted');
+    await fn(ctx);
+    ctx.users = await buildEntries(ctx.doc.users, ctx.master);
+    return ctx;
+  });
+  function umApply(res) { applyServer(res); um.users = res.doc.users || []; um.resetFor = null; umRender(); }
+  const findIn = (ctx, name) => ctx.doc.users.find(x => lowerEq(x.username, name));
 
   function umAdd() {
     return umRun(async () => {
@@ -1218,13 +1344,11 @@
       if (!validUsername(username)) throw gerr(0, 'v_user');
       if (pwProblem(pw)) throw gerr(0, 'v_pw');
       if (umUser(username)) throw gerr(409, 'user_exists');
-      const cred = await makeCredential(pw, umCfg());
-      const next = await updateUsersFile(doc => {
-        if (doc.users.some(x => lowerEq(x.username, username))) throw gerr(409, 'user_exists');
-        doc.users.push({ username, name, role, active: true, ...cred });
-        return doc;
-      });
-      um.users = next.users; umRender();
+      const id = await uidOf(username), salt = randB64(16), wb = bytesToB64(await wrapBitsFrom(pw, salt, ENC_ITER));
+      umApply(await umCommit(ctx => {
+        if (ctx.doc.users.some(x => x.id === id)) throw gerr(409, 'user_exists');
+        ctx.doc.users.push({ id, username, name, role, active: true, salt, iter: ENC_ITER, wb, createdAt: new Date().toISOString() });
+      }));
       $('#umName').value = ''; $('#umUser').value = ''; $('#umPw').value = '';
       umDone('um_created', username, pw);
     });
@@ -1233,40 +1357,61 @@
     return umRun(async () => {
       const box = $('#umList [data-um-newpw]'), pw = box ? box.value : '';
       if (pwProblem(pw)) throw gerr(0, 'v_pw');
-      const cred = await makeCredential(pw, umCfg());
-      const next = await updateUsersFile(doc => {
-        const u = doc.users.find(x => lowerEq(x.username, username));
-        if (!u) throw gerr(404, 'no_user');
-        delete u.passwordHash; delete u.vault; Object.assign(u, cred);
-        return doc;
-      });
-      um.users = next.users; um.resetFor = null; umRender();
+      const salt = randB64(16), wb = bytesToB64(await wrapBitsFrom(pw, salt, ENC_ITER));
+      umApply(await umCommit(ctx => {
+        const u = findIn(ctx, username); if (!u) throw gerr(404, 'no_user');
+        Object.assign(u, { salt, iter: ENC_ITER, wb });
+      }));
       umDone('um_pw_changed', username, pw);
     });
   }
   function umToggle(username) {
     if (umIsSelf(username)) return;
     return umRun(async () => {
-      const next = await updateUsersFile(doc => {
-        const u = doc.users.find(x => lowerEq(x.username, username));
-        if (!u) throw gerr(404, 'no_user');
-        u.active = u.active === false;
-        return doc;
-      });
-      um.users = next.users; umRender(); umMsg('');
+      umApply(await umCommit(ctx => {
+        const u = findIn(ctx, username); if (!u) throw gerr(404, 'no_user');
+        if (u.active !== false) { u.active = false; ctx.master = newMasterKey(); }   // switching someone off renews the data key
+        else u.active = true;
+      }));
+      umMsg('');
     });
   }
   function umDelete(username) {
     if (umIsSelf(username)) return;
     const u = umUser(username); if (!u) return;
     askConfirm(t('um_confirm_del')(u.name || u.username), t('del'), () => umRun(async () => {
-      const next = await updateUsersFile(doc => {
-        if (!doc.users.some(x => lowerEq(x.username, username))) throw gerr(404, 'no_user');
-        doc.users = doc.users.filter(x => !lowerEq(x.username, username));
-        return doc;
-      });
-      um.users = next.users; umRender(); umMsg('');
+      umApply(await umCommit(ctx => {
+        const x = findIn(ctx, username); if (!x) throw gerr(404, 'no_user');
+        if (x.active !== false) ctx.master = newMasterKey();
+        ctx.doc.users = ctx.doc.users.filter(y => y !== x);
+      }));
+      umMsg('');
     }));
+  }
+  // Old data.json -> encrypted. Needs the current admin password; the admin then signs in with the new one.
+  function umEnable() {
+    const np = $('#umEncPw').value, msg = $('#umEncMsg');
+    msg.style.display = 'none';
+    if (pwProblem(np)) { msg.textContent = t('um_e_pw'); msg.style.display = 'block'; return; }
+    askConfirm(t('um_enc_confirm'), t('um_enc_go'), async pw => {
+      if (!(await verifyAdminPassword(pw))) throw gerr(403, 'bad_password');
+      const key = newMasterKey(), id = await uidOf(session.username), salt = randB64(16), wb = bytesToB64(await wrapBitsFrom(np, salt, ENC_ITER));
+      const res = await commitDoc(async ctx => {
+        if (ctx.master || ctx.users) throw gerr(409, 'already_encrypted');
+        ctx.doc.users = [{ id, username: session.username, name: session.name, role: 'admin', active: true, salt, iter: ENC_ITER, wb, createdAt: new Date().toISOString() }];
+        ctx.doc.gh = { repo: gh.repo, branch: gh.branch || '', path: gh.path || 'data.json', token: gh.token };
+        ctx.master = key; ctx.users = await buildEntries(ctx.doc.users, key);
+        return ctx;
+      });
+      applyServer(res); refreshChip();
+      try {                                                   // the old password list is no longer used: empty it
+        const url = repoApi() + '/contents/' + encPath(USERS_PATH) + (gh.branch ? '?ref=' + encodeURIComponent(gh.branch) : '');
+        const g = await ghFetch('GET', url);
+        if (g.ok) await ghPutFile(USERS_PATH, JSON.stringify({ users: [], _readme: 'Accounts now live inside the encrypted data.json.' }, null, 2) + '\n', (await g.json()).sha, 'Retire users.json (data is now encrypted)');
+      } catch (e) {}
+      $('#umEncPw').value = '';
+      await umLoad(); toast(t('um_enc_done'));
+    }, true);
   }
   async function umUnlock() {
     const err = $('#umLockErr'), btn = $('#umUnlock'); err.style.display = 'none'; btn.disabled = true;
@@ -1290,13 +1435,15 @@
   function closeUsers() {
     $('#usersModal').style.display = 'none';
     um.unlocked = false; um.users = []; um.resetFor = null;
-    $('#umAdminPw').value = ''; $('#umPw').value = ''; $('#umList').innerHTML = ''; $('#umCred').textContent = ''; $('#umCredBox').style.display = 'none';
+    $('#umAdminPw').value = ''; $('#umPw').value = ''; $('#umEncPw').value = ''; $('#umList').innerHTML = ''; $('#umCred').textContent = ''; $('#umCredBox').style.display = 'none';
   }
   $('#btnUsers').addEventListener('click', openUsers);
   $('#umClose').addEventListener('click', closeUsers);
   $('#umUnlock').addEventListener('click', umUnlock);
   $('#umAdminPw').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); umUnlock(); } });
   $('#umGen').addEventListener('click', () => { $('#umPw').value = genPassword(); });
+  $('#umEncGen').addEventListener('click', () => { $('#umEncPw').value = genPassword(); });
+  $('#umEncBtn').addEventListener('click', umEnable);
   $('#umAddBtn').addEventListener('click', umAdd);
   $('#umCopy').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText($('#umCred').textContent); toast(t('um_copied')); }

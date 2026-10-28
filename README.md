@@ -16,21 +16,29 @@ All entries are saved in **`data.json`** in this repository, so every device sho
 4. **Open the app, sign in, and paste the token** into the "Connect to GitHub" box (the repository name is filled in for you).
    Do this once on each phone / computer. Then add your first entry - it is saved to `data.json` straight away.
 
-## Accounts (managed inside the app)
+## Encryption and accounts (managed inside the app)
 
-1. Sign in as `admin` (the sample password is `admin123`) and tap **Users** at the top. Enter your admin password again to open it.
-2. First, tap **Reset password** on your own row and give yourself a strong password. Delete or reset the sample `staff` account too.
-3. To add someone: fill in their name, an ID and a password (or tap **Generate**), choose **Staff** or **Admin**, and tap **Add user**.
-   Then tap **Copy sign-in details** and send them the link, ID and password.
-4. Their sign-in works about a minute later (GitHub has to publish the change). They sign in and can add and edit entries straight away -
-   with "connect automatically" ticked, they never need the GitHub token.
+`data.json` is encrypted (AES-256-GCM), the same way as the stock-tracker app. Entries, accounts and the GitHub access are all inside the encrypted file.
+Each account's password unlocks its own copy of the data key; nothing readable is published, and nobody pastes a token.
+
+**First time (turn encryption on):**
+1. Sign in as `admin` (sample password `admin123`) and tap **Users**, then enter your admin password.
+2. Choose a new strong admin password (10+ characters, letters and numbers) and tap **Turn on encryption**, confirming with the old password.
+   Everyone is signed out. `users.json` is emptied; the other old accounts are not moved. Sign in again with the new password.
+
+**Add people:** **Users** -> name, ID, password (or **Generate**), **Staff** or **Admin** -> **Add user** -> **Copy sign-in details** and send it.
+They sign in on their own phone and can add and edit entries straight away. Changes take effect at once.
+
+**Disable or delete someone** renews the data key and re-wraps it for everyone else, so that person's phone can no longer open the data.
+Other people are signed out once and sign in again with the same password. **Reset password** gives someone a new one.
 
 **Staff** can add entries and change statuses and DO numbers. **Admins** can also delete entries, clear all data and manage users.
-Passwords need at least 10 characters with letters and numbers. Do not upload a new `users.json` once you have added people in the app - it would replace them.
 
 ## Good to know
 
-- Anyone who can open the site can read `users.json` and, if the repository is public, `data.json`. With "connect automatically", `users.json` also holds the GitHub access, locked with each person's password - so give everyone a strong password, because a weak one could be guessed and would give write access to this repository. Keep the repository **private** if the figures are confidential (GitHub Pages from a private repository needs a paid GitHub plan, as far as I know).
-- The token can change this repository, so keep it to this one repository and only give it to people you trust. When the token expires, or someone leaves: make a new token, connect your device with it, then **reset every other person's password** (that saves the new token into their account).
+- Sign-in on a new phone reads the encrypted `data.json` without a token, so the repository must be **public** (or the site published) for that to work. The content stays unreadable without a password.
+- Choose long passwords: someone who downloads `data.json` can try passwords offline. A removed person had seen the GitHub token: after removing someone, make a new token and connect with it from **sync status** (the admin's connection is shared to everyone automatically; other devices pick it up on their own).
+- The staff/admin difference is a screen limit: every signed-in account holds the data key, so a technical person could still change data directly.
+- Earlier versions of `data.json` and `users.json` stay in the repository history. Delete `users.json` and consider a new repository (or rewrite the history) if the old data was sensitive.
 - Entries can only be saved while the device is online.
 - After changing any file in the repository, edit `CACHE_VERSION` in `service-worker.js` so installed copies of the app update.
