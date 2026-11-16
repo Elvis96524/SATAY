@@ -1,8 +1,8 @@
 // Satay Supply Dashboard - service worker
 // Bump CACHE_VERSION whenever you change index.html or other cached files so installed apps update.
-const CACHE_VERSION = 'gh4';
+const CACHE_VERSION = 'gh5';
 const CACHE = 'satay-dashboard-' + CACHE_VERSION;
-const ASSETS = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
+const ASSETS = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'tailwind.css'];
 const CDN_HOSTS = ['cdn.tailwindcss.com'];
 
 self.addEventListener('install', event => {
@@ -61,7 +61,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
     // pages and the small settings files must always be fresh (a changed password or user list should apply at once)
-    if (req.mode === 'navigate' || /\/(users|config|data)\.json$/.test(url.pathname)) {
+    if (req.mode === 'navigate' || /\/(users|config|data)\.json$|\/tailwind\.css$/.test(url.pathname)) {
       event.respondWith(networkFirst(req));
     } else {
       event.respondWith(cacheFirst(req));
